@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Scene</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@pixi/filter-glow@5.2.1/dist/browser/pixi-filter-glow.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1b2e;
+            --bg-secondary: #252644;
+            --bg-tertiary: #2f3058;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b9cf;
+            --accent-color: #7c4dff;
+            --border-color: #3d3f6d;
+            --panel-width: 280px;
+            --gradient-start: #1a1b2e;
+            --gradient-end: #2a2b4c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: radial-gradient(circle at top right, rgba(124, 77, 255, 0.1), transparent 70%),
+                        radial-gradient(circle at bottom left, rgba(0, 255, 255, 0.1), transparent 70%);
+        }
+
+        .top-bar {
+            background: linear-gradient(90deg, var(--bg-secondary), var(--bg-tertiary));
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-bar {
+            display: flex;
+            padding: 4px 4px 0;
+            background-color: var(--bg-primary);
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: linear-gradient(to bottom, var(--bg-secondary), var(--bg-tertiary));
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            user-select: none;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: linear-gradient(to bottom, var(--bg-tertiary), var(--accent-color));
+            box-shadow: 0 -2px 10px rgba(124, 77, 255, 0.2);
+        }
+
+        .toolbar {
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            background: linear-gradient(90deg, var(--bg-secondary), var(--bg-tertiary));
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            background: linear-gradient(to bottom, var(--bg-tertiary), var(--accent-color));
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toolbar-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(124, 77, 255, 0.3);
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel, .right-panel {
+            width: var(--panel-width);
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .center-3 {
+            flex: 1;
+            background: linear-gradient(45deg, rgba(124, 77, 255, 0.05), rgba(0, 255, 255, 0.05));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(124, 77, 255, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 100% 0%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+        }
+
+        .property-group {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.03);
+            margin: 8px;
+            border-radius: 8px;
+        }
+
+        .property-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto 1fr;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .property-row label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .property-row input[type="number"] {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            width: 100%;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .property-row input[type="number"]:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(124, 77, 255, 0.2);
+        }
+
+        .objects-panel {
+            padding: 16px;
+        }
+
+        .object-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: move;
+            border-radius: 8px;
+            font-size: 13px;
+            user-select: none;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--bg-tertiary), rgba(124, 77, 255, 0.2));
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .object-item:hover {
+            transform: translateX(5px);
+            background: linear-gradient(135deg, var(--accent-color), rgba(124, 77, 255, 0.4));
+            box-shadow: 0 4px 8px rgba(124, 77, 255, 0.3);
+        }
+
+        .object-item .material-icons {
+            font-size: 20px;
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="top-bar">
+            <div class="tab-bar">
+                <div class="tab active">Game Scene</div>
+            </div>
+            <div class="toolbar">
+                <a href="endless_preview.html" class="toolbar-btn">Preview Run Game</a>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Left Panel - Properties -->
+            <div class="left-panel">
+                <div class="property-group">
+                    <div class="property-row">
+                        <label>X:</label>
+                        <input type="number" id="posX" value="0">
+                        <label>Y:</label>
+                        <input type="number" id="posY" value="0">
+                    </div>
+                    <div class="property-row">
+                        <label>Width:</label>
+                        <input type="number" id="width" value="64">
+                        <label>Height:</label>
+                        <input type="number" id="height" value="64">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Canvas -->
+            <div class="center-panel">
+                <div class="canvas-container" id="canvasContainer"></div>
+            </div>
+
+            <!-- Right Panel - Objects -->
+            <div class="right-panel">
+                <div class="objects-panel">
+                    <div class="object-item" draggable="true" data-type="platformer_character">
+                        <span class="material-icons">person</span>
+                        Character
+                    </div>
+                    <div class="object-item" draggable="true" data-type="platform">
+                        <span class="material-icons">horizontal_rule</span>
+                        Platform
+                    </div>
+                    <div class="object-item" draggable="true" data-type="background">
+                        <span class="material-icons">image</span>
+                        Background
+                    </div>
+                    <div class="object-item" draggable="true" data-type="coin">
+                        <span class="material-icons">monetization_on</span>
+                        Coin
+                    </div>
+                    <div class="object-item" draggable="true" data-type="powerup">
+                        <span class="material-icons">bolt</span>
+                        Power-up
+                    </div>
+                    <div class="object-item" draggable="true" data-type="spike">
+                        <span class="material-icons">warning</span>
+                        Spike Enemy
+                    </div>
+                    <div class="object-item" draggable="true" data-type="spring">
+                        <span class="material-icons">vertical_align_bottom</span>
+                        Spring
+                    </div>
+                    <div class="object-item" draggable="true" data-type="checkpoint">
+                        <span class="material-icons">flag</span>
+                        Checkpoint
+                    </div>
+                    <div class="object-item" draggable="true" data-type="door">
+                        <span class="material-icons">door_front</span>
+                        Door
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GameEditor {
+            constructor() {
+                this.initializePixiApp();
+                this.objects = new Map();
+                this.selectedObject = null;
+                this.setupEventListeners();
+                this.createGrid();
+            }
+
+            initializePixiApp() {
+                this.app = new PIXI.Application({
+                    width: 800,
+                    height: 600,
+                    backgroundColor: 0x1a1b2e,
+                    antialias: true,
+                    resolution: window.devicePixelRatio || 1
+                });
+
+                document.querySelector('.canvas-container').appendChild(this.app.view);
+                
+                // Create separate containers for different object types
+                this.objectsContainer = new PIXI.Container();
+                this.powerupsContainer = new PIXI.Container();
+                this.spikesContainer = new PIXI.Container();
+                
+                // Add containers to stage in correct order
+                this.app.stage.addChild(this.objectsContainer);
+                this.app.stage.addChild(this.powerupsContainer);
+                this.app.stage.addChild(this.spikesContainer);
+
+                // Add a subtle gradient background
+                const background = new PIXI.Graphics();
+                background.beginFill(0x252644);
+                background.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
+                background.endFill();
+
+                const gradient = new PIXI.Graphics();
+                gradient.beginFill(0x7c4dff, 0.1);
+                gradient.drawCircle(this.app.screen.width, 0, this.app.screen.height);
+                gradient.endFill();
+
+                this.app.stage.addChildAt(background, 0);
+                this.app.stage.addChildAt(gradient, 1);
+            }
+
+            createGrid() {
+                const graphics = new PIXI.Graphics();
+                graphics.lineStyle(1, 0x3d3f6d, 0.3);
+                
+                // Draw vertical lines
+                for (let x = 0; x <= this.app.screen.width; x += 32) {
+                    graphics.moveTo(x, 0);
+                    graphics.lineTo(x, this.app.screen.height);
+                }
+                
+                // Draw horizontal lines
+                for (let y = 0; y <= this.app.screen.height; y += 32) {
+                    graphics.moveTo(0, y);
+                    graphics.lineTo(this.app.screen.width, y);
+                }
+                
+                this.app.stage.addChildAt(graphics, 2);
+            }
+
+            setupEventListeners() {
+                const objectItems = document.querySelectorAll('.object-item');
+                objectItems.forEach(item => {
+                    item.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('type', item.dataset.type);
+                        item.style.opacity = '0.5';
+                    });
+                    item.addEventListener('dragend', (e) => {
+                        item.style.opacity = '1';
+                    });
+                });
+
+                this.app.view.addEventListener('dragover', (e) => e.preventDefault());
+                this.app.view.addEventListener('drop', this.handleDrop.bind(this));
+
+                ['posX', 'posY', 'width', 'height'].forEach(prop => {
+                    document.getElementById(prop).addEventListener('change', (e) => {
+                        this.updateObjectProperty(prop, parseFloat(e.target.value));
+                    });
+                });
+
+                window.addEventListener('resize', () => {
+                    const container = document.querySelector('.canvas-container');
+                    this.app.renderer.resize(container.clientWidth, container.clientHeight);
+                    this.createGrid();
+                });
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('type');
+                const rect = this.app.view.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                this.createObject(type, x, y);
+            }
+
+            createObject(type, x, y) {
+                let object;
+                const id = `${type}_${Date.now()}`;
+
+                switch (type) {
+                    case 'platformer_character':
+                        object = this.createCharacter(x, y);
+                        object.type = 'character';
+                        break;
+                    case 'platform':
+                        object = this.createPlatform(x, y);
+                        object.type = 'platform';
+                        break;
+                    case 'background':
+                        object = this.createBackground(x, y);
+                        object.type = 'background';
+                        break;
+                    case 'coin':
+                        object = this.createCoin(x, y);
+                        object.type = 'coin';
+                        break;
+                    case 'powerup':
+                        object = this.createPowerUp(x, y);
+                        object.type = 'powerup';
+                        break;
+                    case 'spike':
+                        object = this.createSpike(x, y);
+                        object.type = 'spike';
+                        break;
+                    case 'spring':
+                        object = this.createSpring(x, y);
+                        object.type = 'spring';
+                        break;
+                    case 'checkpoint':
+                        object = this.createCheckpoint(x, y);
+                        object.type = 'checkpoint';
+                        break;
+                    case 'door':
+                        object = this.createDoor(x, y);
+                        object.type = 'door';
+                        break;
+                }
+
+                if (object) {
+                    object.id = id;
+                    object.interactive = true;
+                    object.buttonMode = true;
+                    
+                    // Add animation if the object has it
+                    if (object.animate) {
+                        this.app.ticker.add(object.animate);
+                    }
+                    
+                    object
+                        .on('pointerdown', () => this.selectObject(object))
+                        .on('pointermove', (e) => {
+                            if (e.data.buttons === 1) {
+                                const newPos = e.data.getLocalPosition(this.app.stage);
+                                object.x = Math.round(newPos.x);
+                                object.y = Math.round(newPos.y);
+                                this.updatePropertyPanel();
+                                this.saveEditorObjects();
+                            }
+                        });
+                    
+                    this.objects.set(id, object);
+                    this.objectsContainer.addChild(object);
+                    this.selectObject(object);
+                    this.saveEditorObjects();
+                }
+            }
+
+            createCharacter(x, y) {
+                const character = new PIXI.Graphics();
+                character.lineStyle(2, 0x7c4dff);
+                character.beginFill(0xffa500);
+                character.drawRoundedRect(-32, -32, 64, 64, 8);
+                character.endFill();
+                character.position.set(x, y);
+                return character;
+            }
+
+            createPlatform(x, y) {
+                const platform = new PIXI.Graphics();
+                platform.lineStyle(2, 0x7c4dff);
+                platform.beginFill(0x90EE90);
+                platform.drawRoundedRect(-100, -20, 200, 40, 8);
+                platform.endFill();
+                platform.position.set(x, y);
+                return platform;
+            }
+
+            createBackground(x, y) {
+                const bg = new PIXI.Graphics();
+                bg.lineStyle(2, 0x7c4dff);
+                bg.beginFill(0x2f3058, 0.5);
+                bg.drawRoundedRect(-400, -300, 800, 600, 16);
+                bg.endFill();
+                bg.position.set(x, y);
+                return bg;
+            }
+
+            createCoin(x, y) {
+                const coin = new PIXI.Graphics();
+                coin.lineStyle(2, 0xffd700);
+                coin.beginFill(0xffd700);
+                coin.drawCircle(0, 0, 15);
+                coin.endFill();
+                
+                // Add inner detail
+                coin.lineStyle(1, 0xffff00);
+                coin.drawCircle(0, 0, 10);
+                
+                // Add dollar sign
+                coin.lineStyle(2, 0xffff00);
+                coin.moveTo(-5, -5);
+                coin.lineTo(5, 5);
+                coin.moveTo(0, -7);
+                coin.lineTo(0, 7);
+                
+                // Add spin animation
+                coin.animate = () => {
+                    coin.rotation += 0.05;
+                };
+                
+                coin.position.set(x, y);
+                return coin;
+            }
+
+            createPowerUp(x, y) {
+                const powerup = new PIXI.Graphics();
+                powerup.lineStyle(2, 0x7c4dff);
+                powerup.beginFill(0x00ff00);
+                
+                // Draw star shape manually
+                const points = [];
+                const numPoints = 5;
+                const outerRadius = 20;
+                const innerRadius = 10;
+                
+                for (let i = 0; i < numPoints * 2; i++) {
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const angle = (i * Math.PI) / numPoints;
+                    points.push(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * radius
+                    );
+                }
+                
+                powerup.drawPolygon(points);
+                powerup.endFill();
+                
+                // Add pulse animation
+                powerup.animate = () => {
+                    powerup.scale.set(1 + Math.sin(this.app.ticker.lastTime * 0.005) * 0.1);
+                };
+                
+                powerup.position.set(x, y);
+                return powerup;
+            }
+
+            createSpike(x, y) {
+                const spike = new PIXI.Graphics();
+                spike.lineStyle(2, 0xff0000);
+                spike.beginFill(0xff4500);
+                
+                // Draw spike shape
+                spike.moveTo(0, -20);
+                spike.lineTo(20, 20);
+                spike.lineTo(-20, 20);
+                spike.lineTo(0, -20);
+                
+                spike.endFill();
+                
+                // Add simple danger effect using alpha
+                spike.alpha = 0.9;
+                
+                spike.position.set(x, y);
+                return spike;
+            }
+
+            createSpring(x, y) {
+                const spring = new PIXI.Graphics();
+                spring.lineStyle(2, 0xffff00);
+                spring.beginFill(0xffd700);
+                
+                // Draw spring shape
+                spring.drawRect(-15, -10, 30, 20);
+                
+                // Add spring coils
+                for (let i = -10; i <= 10; i += 5) {
+                    spring.moveTo(i, -10);
+                    spring.lineTo(i, 10);
+                }
+                
+                spring.endFill();
+                
+                // Add bounce animation
+                let bounceDirection = 1;
+                spring.animate = () => {
+                    spring.scale.y = 1 + Math.sin(this.app.ticker.lastTime * 0.01) * 0.1;
+                };
+                
+                spring.position.set(x, y);
+                return spring;
+            }
+
+            createCheckpoint(x, y) {
+                const checkpoint = new PIXI.Graphics();
+                checkpoint.lineStyle(2, 0x00ff00);
+                checkpoint.beginFill(0x00ff00, 0.3);
+                
+                // Draw flag pole and flag
+                checkpoint.moveTo(0, -30);
+                checkpoint.lineTo(0, 30);
+                checkpoint.lineTo(20, 30);
+                checkpoint.lineTo(20, -30);
+                
+                // Draw flag
+                checkpoint.beginFill(0x00ff00);
+                checkpoint.moveTo(0, -30);
+                checkpoint.lineTo(20, -20);
+                checkpoint.lineTo(0, -10);
+                checkpoint.endFill();
+                
+                // Add pulse animation
+                checkpoint.animate = () => {
+                    checkpoint.alpha = 0.5 + Math.sin(this.app.ticker.lastTime * 0.005) * 0.3;
+                };
+                
+                checkpoint.position.set(x, y);
+                return checkpoint;
+            }
+
+            createDoor(x, y) {
+                const door = new PIXI.Graphics();
+                door.lineStyle(2, 0x8b4513);
+                door.beginFill(0x8b4513);
+                
+                // Draw door frame
+                door.drawRect(-20, -40, 40, 80);
+                
+                // Add door details
+                door.lineStyle(1, 0x654321);
+                door.moveTo(0, -40);
+                door.lineTo(0, 40);
+                
+                // Add door handle
+                door.beginFill(0xffff00);
+                door.drawCircle(15, 0, 5);
+                door.endFill();
+                
+                // Add open/close animation
+                let isOpen = false;
+                door.animate = () => {
+                    if (isOpen) {
+                        door.rotation = Math.min(door.rotation + 0.05, Math.PI/4);
+                    } else {
+                        door.rotation = Math.max(door.rotation - 0.05, 0);
+                    }
+                };
+                
+                // Toggle door state on click
+                door.interactive = true;
+                door.on('click', () => {
+                    isOpen = !isOpen;
+                });
+                
+                door.position.set(x, y);
+                return door;
+            }
+
+            selectObject(object) {
+                if (this.selectedObject) {
+                    this.selectedObject.alpha = 1;
+                    if (this.selectedObject.filters) {
+                        this.selectedObject.filters[0].outerStrength = 1;
+                    }
+                }
+                this.selectedObject = object;
+                object.alpha = 0.9;
+                if (object.filters) {
+                    object.filters[0].outerStrength = 2;
+                }
+                this.updatePropertyPanel();
+            }
+
+            updatePropertyPanel() {
+                if (!this.selectedObject) return;
+
+                document.getElementById('posX').value = Math.round(this.selectedObject.x);
+                document.getElementById('posY').value = Math.round(this.selectedObject.y);
+                document.getElementById('width').value = Math.round(this.selectedObject.width);
+                document.getElementById('height').value = Math.round(this.selectedObject.height);
+            }
+
+            updateObjectProperty(prop, value) {
+                if (!this.selectedObject) return;
+
+                switch (prop) {
+                    case 'posX':
+                        this.selectedObject.x = value;
+                        break;
+                    case 'posY':
+                        this.selectedObject.y = value;
+                        break;
+                    case 'width':
+                        this.selectedObject.width = value;
+                        break;
+                    case 'height':
+                        this.selectedObject.height = value;
+                        break;
+                }
+                
+                // Save changes to localStorage
+                this.saveEditorObjects();
+            }
+            
+            // New method to save editor objects to localStorage
+            saveEditorObjects() {
+                const objectsData = [];
+                this.objects.forEach(obj => {
+                    objectsData.push({
+                        id: obj.id,
+                        type: obj.type,
+                        x: obj.x,
+                        y: obj.y,
+                        width: obj.width,
+                        height: obj.height
+                    });
+                });
+                
+                try {
+                    localStorage.setItem('editorObjects', JSON.stringify(objectsData));
+                } catch (e) {
+                    console.error('Failed to save editor objects:', e);
+                }
+            }
+        }
+
+        window.addEventListener('load', () => {
+            window.editor = new GameEditor();
+        });
+    </script>
+</body>
+</html>

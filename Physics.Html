@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Physics Game Designer</title>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.18.0/build/matter.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #0f172a;
+        color: #e2e8f0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .header {
+        background-color: #1e293b;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        z-index: 10;
+      }
+
+      .header h1 {
+        color: #38bdf8;
+        font-size: 1.5rem;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .nav-button {
+        background-color: #334155;
+        color: #e2e8f0;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .nav-button:hover {
+        background-color: #475569;
+      }
+
+      .nav-button.active {
+        background-color: #38bdf8;
+        color: #0f172a;
+      }
+
+      .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: 300px;
+        background-color: #1e293b;
+        border-right: 1px solid #334155;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+
+      .tool-section {
+        margin-bottom: 0.5rem;
+        background-color: #273548;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .tool-header {
+        background-color: #334155;
+        padding: 0.75rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .tool-header h3 {
+        color: #38bdf8;
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .tool-content {
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .tool-content.collapsed {
+        display: none;
+      }
+
+      .tool-option {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .tool-option label {
+        font-size: 0.875rem;
+        color: #94a3b8;
+      }
+
+      .form-group {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .form-group input,
+      .form-group select {
+        flex: 1;
+      }
+
+      input,
+      select {
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #475569;
+        background-color: #1e293b;
+        color: #e2e8f0;
+        outline: none;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: #38bdf8;
+      }
+
+      input[type="color"] {
+        height: 38px;
+        padding: 0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 8px;
+        background: #334155;
+        border-radius: 4px;
+        outline: none;
+        border: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #38bdf8;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: #38bdf8;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .action-button {
+        background-color: #38bdf8;
+        color: #0f172a;
+        font-weight: 500;
+        margin-top: 0.5rem;
+      }
+
+      .action-button:hover {
+        background-color: #0ea5e9;
+      }
+
+      .delete-button {
+        background-color: #ef4444;
+        color: white;
+      }
+
+      .delete-button:hover {
+        background-color: #dc2626;
+      }
+
+      .object-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .object-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background-color: #334155;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .object-item:hover {
+        background-color: #475569;
+      }
+
+      .object-item.selected {
+        background-color: #38bdf8;
+        color: #0f172a;
+      }
+
+      .canvas-container {
+        flex: 1;
+        background-color: #111827;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #physics-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .template-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+
+      .template-item {
+        background-color: #334155;
+        padding: 0.5rem;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .template-item:hover {
+        background-color: #475569;
+      }
+
+      .template-item img {
+        width: 100%;
+        height: 64px;
+        object-fit: contain;
+        margin-bottom: 0.5rem;
+        border-radius: 2px;
+      }
+
+      .template-item p {
+        font-size: 0.875rem;
+      }
+
+      .control-panel {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.5rem;
+        background-color: rgba(30, 41, 59, 0.8);
+        padding: 0.5rem;
+        border-radius: 4px;
+        backdrop-filter: blur(4px);
+        z-index: 10;
+      }
+
+      .control-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #334155;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .control-button.active {
+        background-color: #38bdf8;
+        color: #0f172a;
+      }
+
+      .control-button:hover {
+        background-color: #475569;
+      }
+
+      .control-button.active:hover {
+        background-color: #0ea5e9;
+      }
+
+      .separator {
+        width: 1px;
+        background-color: #475569;
+        margin: 0 0.25rem;
+      }
+
+      .object-properties {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background-color: rgba(30, 41, 59, 0.8);
+        padding: 0.75rem;
+        border-radius: 4px;
+        backdrop-filter: blur(4px);
+        width: 250px;
+        display: none;
+      }
+
+      .object-properties.visible {
+        display: block;
+      }
+
+      .property-group {
+        margin-bottom: 0.75rem;
+      }
+
+      .property-group h4 {
+        font-size: 0.875rem;
+        color: #38bdf8;
+        margin-bottom: 0.5rem;
+      }
+
+      .property-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .property-label {
+        font-size: 0.8125rem;
+        color: #94a3b8;
+      }
+
+      .property-value {
+        font-size: 0.8125rem;
+        color: #e2e8f0;
+        font-family: monospace;
+      }
+
+      .tooltip {
+        position: absolute;
+        background-color: rgba(30, 41, 59, 0.9);
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8125rem;
+        z-index: 100;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        max-width: 200px;
+      }
+
+      /* Modal styles */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .modal-backdrop.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal {
+        background-color: #1e293b;
+        border-radius: 8px;
+        width: 500px;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+
+      .modal-header {
+        padding: 1rem;
+        border-bottom: 1px solid #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        font-size: 1.25rem;
+        color: #38bdf8;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 1.5rem;
+        padding: 0;
+        transition: color 0.2s;
+      }
+
+      .modal-close:hover {
+        color: #e2e8f0;
+      }
+
+      .modal-body {
+        padding: 1rem;
+      }
+
+      .modal-footer {
+        padding: 1rem;
+        border-top: 1px solid #334155;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .code-block {
+        background-color: #111827;
+        padding: 1rem;
+        border-radius: 4px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        margin-bottom: 1rem;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      /* Tab system for sidebar */
+      .sidebar-tabs {
+        display: flex;
+        background-color: #1e293b;
+        border-bottom: 1px solid #334155;
+      }
+
+      .sidebar-tab {
+        flex: 1;
+        padding: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: background-color 0.2s;
+        border-bottom: 2px solid transparent;
+      }
+
+      .sidebar-tab:hover {
+        background-color: #273548;
+      }
+
+      .sidebar-tab.active {
+        background-color: #273548;
+        color: #38bdf8;
+        border-bottom-color: #38bdf8;
+      }
+
+      .sidebar-content {
+        display: none;
+        flex-direction: column;
+        padding: 0.75rem;
+        gap: 0.75rem;
+        flex-grow: 1;
+        overflow-y: auto;
+      }
+
+      .sidebar-content.active {
+        display: flex;
+      }
+
+      /* Small screen adaptations */
+      @media (max-width: 768px) {
+        .main-container {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          max-height: 30%;
+          border-right: none;
+          border-bottom: 1px solid #334155;
+        }
+
+        .object-properties {
+          top: auto;
+          bottom: 5rem;
+          right: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Physics Game Designer</h1>
+      <div class="nav-buttons">
+        <button class="nav-button" id="homeButton">Home</button>
+        <button class="nav-button active" id="physicsButton">
+          Physics Designer
+        </button>
+        <button class="nav-button" id="bgDesignerButton">
+          Background Designer
+        </button>
+        <button class="nav-button" id="tutorialsButton">Tutorials</button>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="sidebar">
+        <div class="sidebar-tabs">
+          <div class="sidebar-tab active" data-tab="objects">Objects</div>
+          <div class="sidebar-tab" data-tab="physics">Physics</div>
+          <div class="sidebar-tab" data-tab="templates">Templates</div>
+        </div>
+
+        <div class="sidebar-content active" data-tab-content="objects">
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Add Objects <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="tool-option">
+                <label for="objectType">Object Type</label>
+                <select id="objectType">
+                  <option value="rectangle">Rectangle</option>
+                  <option value="circle">Circle</option>
+                  <option value="polygon">Polygon</option>
+                  <option value="constraint">Constraint</option>
+                </select>
+              </div>
+
+              <div id="rectangleOptions" class="shape-options">
+                <div class="tool-option">
+                  <label for="rectWidth">Width</label>
+                  <input
+                    type="number"
+                    id="rectWidth"
+                    value="100"
+                    min="10"
+                    max="500"
+                  />
+                </div>
+                <div class="tool-option">
+                  <label for="rectHeight">Height</label>
+                  <input
+                    type="number"
+                    id="rectHeight"
+                    value="100"
+                    min="10"
+                    max="500"
+                  />
+                </div>
+              </div>
+
+              <div
+                id="circleOptions"
+                class="shape-options"
+                style="display: none"
+              >
+                <div class="tool-option">
+                  <label for="circleRadius">Radius</label>
+                  <input
+                    type="number"
+                    id="circleRadius"
+                    value="50"
+                    min="10"
+                    max="200"
+                  />
+                </div>
+              </div>
+
+              <div
+                id="polygonOptions"
+                class="shape-options"
+                style="display: none"
+              >
+                <div class="tool-option">
+                  <label for="polygonSides">Sides</label>
+                  <input
+                    type="number"
+                    id="polygonSides"
+                    value="5"
+                    min="3"
+                    max="8"
+                  />
+                </div>
+                <div class="tool-option">
+                  <label for="polygonRadius">Radius</label>
+                  <input
+                    type="number"
+                    id="polygonRadius"
+                    value="50"
+                    min="10"
+                    max="200"
+                  />
+                </div>
+              </div>
+
+              <div
+                id="constraintOptions"
+                class="shape-options"
+                style="display: none"
+              >
+                <div class="tool-option">
+                  <label for="constraintType">Constraint Type</label>
+                  <select id="constraintType">
+                    <option value="spring">Spring</option>
+                    <option value="rope">Rope</option>
+                    <option value="pin">Pin</option>
+                  </select>
+                </div>
+                <div class="tool-option">
+                  <label for="constraintStiffness">Stiffness</label>
+                  <input
+                    type="range"
+                    id="constraintStiffness"
+                    min="0.01"
+                    max="1"
+                    step="0.01"
+                    value="0.1"
+                  />
+                </div>
+                <div class="tool-option">
+                  <label for="constraintLength">Length</label>
+                  <input
+                    type="number"
+                    id="constraintLength"
+                    value="100"
+                    min="10"
+                    max="500"
+                  />
+                </div>
+                <p class="tool-hint">
+                  Select two objects after placing this constraint
+                </p>
+              </div>
+
+              <div class="tool-option" id="objectColorOption">
+                <label for="objectColor">Color</label>
+                <input type="color" id="objectColor" value="#38bdf8" />
+              </div>
+
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="action-button" id="addObjectBtn">
+                    Add Object
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Scene Objects <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="object-list" id="objectList">
+                <!-- Objects will be listed here -->
+                <div class="object-list-empty">No objects added yet</div>
+              </div>
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="delete-button" id="deleteSelectedBtn">
+                    Delete Selected
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-content" data-tab-content="physics">
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Global Physics <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="tool-option">
+                <label for="gravityX">Gravity X</label>
+                <input
+                  type="range"
+                  id="gravityX"
+                  min="-1"
+                  max="1"
+                  step="0.01"
+                  value="0"
+                />
+                <span id="gravityXValue">0</span>
+              </div>
+              <div class="tool-option">
+                <label for="gravityY">Gravity Y</label>
+                <input
+                  type="range"
+                  id="gravityY"
+                  min="-1"
+                  max="1"
+                  step="0.01"
+                  value="1"
+                />
+                <span id="gravityYValue">1</span>
+              </div>
+              <div class="tool-option">
+                <label for="globalFriction">Global Friction</label>
+                <input
+                  type="range"
+                  id="globalFriction"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+                <span id="globalFrictionValue">0.1</span>
+              </div>
+              <div class="tool-option">
+                <label for="globalRestitution"
+                  >Global Restitution (Bounciness)</label
+                >
+                <input
+                  type="range"
+                  id="globalRestitution"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.6"
+                />
+                <span id="globalRestitutionValue">0.6</span>
+              </div>
+              <div class="tool-option">
+                <label for="timeScale">Time Scale</label>
+                <input
+                  type="range"
+                  id="timeScale"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value="1"
+                />
+                <span id="timeScaleValue">1.0</span>
+              </div>
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="action-button" id="applyPhysicsBtn">
+                    Apply Physics
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Object Physics <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <p>Select an object to edit its physics properties</p>
+
+              <div id="objectPhysicsControls" style="display: none">
+                <div class="tool-option">
+                  <label for="objectMass">Mass</label>
+                  <input
+                    type="range"
+                    id="objectMass"
+                    min="1"
+                    max="100"
+                    value="10"
+                  />
+                  <span id="objectMassValue">10</span>
+                </div>
+                <div class="tool-option">
+                  <label for="objectFriction">Friction</label>
+                  <input
+                    type="range"
+                    id="objectFriction"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.1"
+                  />
+                  <span id="objectFrictionValue">0.1</span>
+                </div>
+                <div class="tool-option">
+                  <label for="objectRestitution">Restitution</label>
+                  <input
+                    type="range"
+                    id="objectRestitution"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.6"
+                  />
+                  <span id="objectRestitutionValue">0.6</span>
+                </div>
+                <div class="tool-option">
+                  <label for="isStatic">Is Static</label>
+                  <div class="form-group">
+                    <select id="isStatic">
+                      <option value="false">No (Dynamic)</option>
+                      <option value="true">Yes (Static)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="tool-option">
+                  <label for="isSensor">Is Sensor</label>
+                  <div class="form-group">
+                    <select id="isSensor">
+                      <option value="false">No (Solid)</option>
+                      <option value="true">Yes (Trigger)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="tool-option">
+                  <div class="form-group">
+                    <button class="action-button" id="applyObjectPhysicsBtn">
+                      Apply to Object
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Actions <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="action-button" id="startSimulationBtn">
+                    Start Simulation
+                  </button>
+                  <button
+                    class="action-button"
+                    id="resetSimulationBtn"
+                    style="display: none"
+                  >
+                    Reset Simulation
+                  </button>
+                </div>
+              </div>
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="action-button" id="exportPhysicsBtn">
+                    Export Physics
+                  </button>
+                  <button class="action-button" id="importPhysicsBtn">
+                    Import Physics
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-content" data-tab-content="templates">
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Physics Templates <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="template-grid">
+                <div class="template-item" data-template="pendulum">
+                  <img
+                    src="https://via.placeholder.com/150?text=Pendulum"
+                    alt="Pendulum"
+                  />
+                  <p>Pendulum</p>
+                </div>
+                <div class="template-item" data-template="newtons-cradle">
+                  <img
+                    src="https://via.placeholder.com/150?text=Newton's+Cradle"
+                    alt="Newton's Cradle"
+                  />
+                  <p>Newton's Cradle</p>
+                </div>
+                <div class="template-item" data-template="bridge">
+                  <img
+                    src="https://via.placeholder.com/150?text=Bridge"
+                    alt="Bridge"
+                  />
+                  <p>Bridge</p>
+                </div>
+                <div class="template-item" data-template="ragdoll">
+                  <img
+                    src="https://via.placeholder.com/150?text=Ragdoll"
+                    alt="Ragdoll"
+                  />
+                  <p>Ragdoll</p>
+                </div>
+                <div class="template-item" data-template="catapult">
+                  <img
+                    src="https://via.placeholder.com/150?text=Catapult"
+                    alt="Catapult"
+                  />
+                  <p>Catapult</p>
+                </div>
+                <div class="template-item" data-template="pinball">
+                  <img
+                    src="https://via.placeholder.com/150?text=Pinball"
+                    alt="Pinball"
+                  />
+                  <p>Pinball</p>
+                </div>
+                <div class="template-item" data-template="car">
+                  <img
+                    src="https://via.placeholder.com/150?text=Car"
+                    alt="Car"
+                  />
+                  <p>Car</p>
+                </div>
+                <div class="template-item" data-template="platformer">
+                  <img
+                    src="https://via.placeholder.com/150?text=Platformer"
+                    alt="Platformer"
+                  />
+                  <p>Platformer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-section">
+            <div class="tool-header">
+              <h3>Save & Load <span>▼</span></h3>
+            </div>
+            <div class="tool-content">
+              <div class="tool-option">
+                <label for="sceneName">Scene Name</label>
+                <input
+                  type="text"
+                  id="sceneName"
+                  placeholder="My Physics Scene"
+                />
+              </div>
+              <div class="tool-option">
+                <div class="form-group">
+                  <button class="action-button" id="saveSceneBtn">
+                    Save Scene
+                  </button>
+                  <button class="action-button" id="loadSceneBtn">
+                    Load Scene
+                  </button>
+                </div>
+              </div>
+              <div id="savedScenesList" class="object-list">
+                <!-- Saved scenes will be listed here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="physics-canvas"></canvas>
+
+        <div class="control-panel">
+          <button
+            class="control-button active"
+            id="selectMode"
+            title="Select Mode"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M14.082 2.182a.5.5 0 0 1 .103.557L8.528 15.467a.5.5 0 0 1-.917-.007L5.57 10.694.803 8.652a.5.5 0 0 1-.006-.916l12.728-5.657a.5.5 0 0 1 .556.103zM2.25 8.184l3.897 1.67a.5.5 0 0 1 .262.263l1.67 3.897L12.743 3.52 2.25 8.184z"
+              />
+            </svg>
+          </button>
+          <button class="control-button" id="moveMode" title="Move Mode">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 3a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 3zm4 8a4 4 0 0 1-8 0V7a.5.5 0 0 1 1 0v4a3 3 0 1 0 6 0V7a.5.5 0 0 1 1 0v4zm-3.5-7h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5z"
+              />
+            </svg>
+          </button>
+          <div class="separator"></div>
+          <button class="control-button" id="panMode" title="Pan Mode">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8 16a.5.5 0 0 1-.5-.5v-1.293l-.646.647a.5.5 0 0 1-.707-.708L7.5 12.793V8.866l-3.4 1.963-.496 1.85a.5.5 0 1 1-.966-.26l.237-.882-1.12.646a.5.5 0 0 1-.5-.866l1.12-.646-.883-.237a.5.5 0 1 1 .258-.966l1.85.495L7 8 3.6 6.037l-1.85.495a.5.5 0 0 1-.258-.966l.883-.237-1.12-.646a.5.5 0 0 1 .5-.866l1.12.646-.237-.883a.5.5 0 1 1 .966-.258l.495 1.85L7.5 7.134V3.207L6.147 1.854a.5.5 0 1 1 .707-.708l.646.647V.5a.5.5 0 1 1 1 0v1.293l.647-.647a.5.5 0 1 1 .707.708L8.5 3.207v3.927l3.4-1.963.496-1.85a.5.5 0 1 1 .966.26l-.236.882 1.12-.646a.5.5 0 0 1 .5.866l-1.12.646.883.237a.5.5 0 1 1-.26.966l-1.85-.495-3.4 1.963 3.4 1.963 1.85-.495a.5.5 0 0 1 .26.966l-.883.237 1.12.646a.5.5 0 0 1-.5.866l-1.12-.646.236.883a.5.5 0 1 1-.966.258l-.495-1.85-3.4-1.963v3.927l1.353 1.353a.5.5 0 0 1-.707.708l-.647-.647V15.5a.5.5 0 0 1-.5.5z"
+              />
+            </svg>
+          </button>
+          <button class="control-button" id="zoomInBtn" title="Zoom In">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"
+              />
+              <path
+                d="M10.344 11.742c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1 6.538 6.538 0 0 1-1.398 1.4z"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M6.5 3a.5.5 0 0 1 .5.5V6h2.5a.5.5 0 0 1 0 1H7v2.5a.5.5 0 0 1-1 0V7H3.5a.5.5 0 0 1 0-1H6V3.5a.5.5 0 0 1 .5-.5z"
+              />
+            </svg>
+          </button>
+          <button class="control-button" id="zoomOutBtn" title="Zoom Out">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"
+              />
+              <path
+                d="M10.344 11.742c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1 6.538 6.538 0 0 1-1.398 1.4z"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M3 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"
+              />
+            </svg>
+          </button>
+          <div class="separator"></div>
+          <button class="control-button" id="playPauseBtn" title="Play/Pause">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+              id="playIcon"
+            >
+              <path
+                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"
+              />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+              id="pauseIcon"
+              style="display: none"
+            >
+              <path
+                d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"
+              />
+            </svg>
+          </button>
+          <button class="control-button" id="resetBtn" title="Reset">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"
+              />
+              <path
+                d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="object-properties" id="objectProperties">
+          <div class="property-group">
+            <h4>Object Properties</h4>
+            <div class="property-row">
+              <span class="property-label">Type:</span>
+              <span class="property-value" id="propType">Rectangle</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Position:</span>
+              <span class="property-value" id="propPosition">x: 0, y: 0</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Size:</span>
+              <span class="property-value" id="propSize">w: 100, h: 100</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Angle:</span>
+              <span class="property-value" id="propAngle">0°</span>
+            </div>
+          </div>
+          <div class="property-group">
+            <h4>Physics Properties</h4>
+            <div class="property-row">
+              <span class="property-label">Mass:</span>
+              <span class="property-value" id="propMass">10</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Friction:</span>
+              <span class="property-value" id="propFriction">0.1</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Restitution:</span>
+              <span class="property-value" id="propRestitution">0.6</span>
+            </div>
+            <div class="property-row">
+              <span class="property-label">Static:</span>
+              <span class="property-value" id="propStatic">No</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Modal -->
+        <div class="modal-backdrop" id="exportModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Export Physics Configuration</h2>
+              <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p>Copy the code below to use in your game:</p>
+              <div class="code-block" id="exportCode">
+                // Loading physics configuration...
+              </div>
+              <div class="tool-option">
+                <label for="exportFormat">Export Format</label>
+                <select id="exportFormat">
+                  <option value="json">JSON</option>
+                  <option value="js">JavaScript</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="action-button" id="copyCodeBtn">Copy Code</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div class="modal-backdrop" id="importModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Import Physics Configuration</h2>
+              <button class="modal-close" id="closeImportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p>Paste your physics configuration below:</p>
+              <textarea
+                id="importCode"
+                rows="10"
+                style="
+                  width: 100%;
+                  background-color: #111827;
+                  color: #e2e8f0;
+                  padding: 1rem;
+                  border-radius: 4px;
+                  border: 1px solid #334155;
+                  resize: vertical;
+                "
+              ></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="action-button" id="importCodeBtn">Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize the Matter.js physics engine
+      const Engine = Matter.Engine;
+      const Render = Matter.Render;
+      const World = Matter.World;
+      const Bodies = Matter.Bodies;
+      const Body = Matter.Body;
+      const Composite = Matter.Composite;
+      const Constraint = Matter.Constraint;
+      const Mouse = Matter.Mouse;
+      const MouseConstraint = Matter.MouseConstraint;
+      const Events = Matter.Events;
+      const Query = Matter.Query;
+      const Vector = Matter.Vector;
+
+      // Set up the engine and renderer
+      const engine = Engine.create({
+        enableSleeping: true,
+      });
+
+      // Apply default gravity
+      engine.gravity.y = 1;
+
+      const canvas = document.getElementById("physics-canvas");
+      const renderWidth = canvas.parentElement.clientWidth;
+      const renderHeight = canvas.parentElement.clientHeight;
+
+      const render = Render.create({
+        canvas: canvas,
+        engine: engine,
+        options: {
+          width: renderWidth,
+          height: renderHeight,
+          wireframes: false,
+          background: "#111827",
+          showSleeping: true,
+          showStats: false,
+          showVelocity: false,
+          showCollisions: false,
+          showAxes: false,
+          showPositions: false,
+          showAngleIndicator: false,
+          showIds: false,
+          showShadows: false,
+          showInternalEdges: false,
+          showMousePosition: false,
+        },
+      });
+
+      // Start the renderer
+      Render.run(render);
+
+      // Create mouse constraint for interaction
+      const mouse = Mouse.create(render.canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+          stiffness: 0.2,
+          render: {
+            visible: false,
+          },
+        },
+      });
+
+      World.add(engine.world, mouseConstraint);
+
+      // Keep track of objects and state
+      let objects = [];
+      let currentMode = "select";
+      let selectedObject = null;
+      let simulationRunning = false;
+      let isPaused = true;
+      let zoomLevel = 1;
+      let panOffset = { x: 0, y: 0 };
+      let worldBounds = {
+        min: { x: 0, y: 0 },
+        max: { x: renderWidth, y: renderHeight },
+      };
+
+      // Set up boundary walls
+      const wallThickness = 50;
+      const walls = [
+        // Bottom wall
+        Bodies.rectangle(
+          renderWidth / 2,
+          renderHeight + wallThickness / 2,
+          renderWidth,
+          wallThickness,
+          {
+            isStatic: true,
+            render: { fillStyle: "#1e293b" },
+          }
+        ),
+        // Left wall
+        Bodies.rectangle(
+          -wallThickness / 2,
+          renderHeight / 2,
+          wallThickness,
+          renderHeight,
+          {
+            isStatic: true,
+            render: { fillStyle: "#1e293b" },
+          }
+        ),
+        // Right wall
+        Bodies.rectangle(
+          renderWidth + wallThickness / 2,
+          renderHeight / 2,
+          wallThickness,
+          renderHeight,
+          {
+            isStatic: true,
+            render: { fillStyle: "#1e293b" },
+          }
+        ),
+        // Top wall
+        Bodies.rectangle(
+          renderWidth / 2,
+          -wallThickness / 2,
+          renderWidth,
+          wallThickness,
+          {
+            isStatic: true,
+            render: { fillStyle: "#1e293b" },
+          }
+        ),
+      ];
+
+      World.add(engine.world, walls);
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        const newWidth = canvas.parentElement.clientWidth;
+        const newHeight = canvas.parentElement.clientHeight;
+        render.options.width = newWidth;
+        render.options.height = newHeight;
+        render.canvas.width = newWidth;
+        render.canvas.height = newHeight;
+
+        // Reposition walls
+        Body.setPosition(walls[0], {
+          x: newWidth / 2,
+          y: newHeight + wallThickness / 2,
+        });
+        Body.setPosition(walls[2], {
+          x: newWidth + wallThickness / 2,
+          y: newHeight / 2,
+        });
+        Body.setPosition(walls[3], { x: newWidth / 2, y: -wallThickness / 2 });
+
+        // Update world bounds
+        worldBounds.max.x = newWidth;
+        worldBounds.max.y = newHeight;
+      });
+
+      // Helper function to generate unique IDs
+      function generateId() {
+        return "obj_" + Math.random().toString(36).substr(2, 9);
+      }
+
+      // Helper function to convert hex color to RGB
+      function hexToRgb(hex) {
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(
+          shorthandRegex,
+          (m, r, g, b) => r + r + g + g + b + b
+        );
+
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+            }
+          : null;
+      }
+
+      // Function to create an object based on user input
+      function createObject(options = {}) {
+        const objectType = document.getElementById("objectType").value;
+        const color = document.getElementById("objectColor").value;
+        const rgbColor = hexToRgb(color);
+        const alphaBg = `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 0.8)`;
+        const alphaBorder = `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, 1)`;
+
+        const defaultOptions = {
+          restitution: 0.6,
+          friction: 0.1,
+          render: {
+            fillStyle: alphaBg,
+            strokeStyle: alphaBorder,
+            lineWidth: 2,
+          },
+        };
+
+        const mergedOptions = { ...defaultOptions, ...options };
+        let body;
+
+        const centerX = renderWidth / 2;
+        const centerY = renderHeight / 2;
+
+        switch (objectType) {
+          case "rectangle":
+            const width = parseInt(document.getElementById("rectWidth").value);
+            const height = parseInt(
+              document.getElementById("rectHeight").value
+            );
+            body = Bodies.rectangle(
+              centerX,
+              centerY,
+              width,
+              height,
+              mergedOptions
+            );
+            body.objectType = "rectangle";
+            body.width = width;
+            body.height = height;
+            break;
+
+          case "circle":
+            const radius = parseInt(
+              document.getElementById("circleRadius").value
+            );
+            body = Bodies.circle(centerX, centerY, radius, mergedOptions);
+            body.objectType = "circle";
+            body.radius = radius;
+            break;
+
+          case "polygon":
+            const sides = parseInt(
+              document.getElementById("polygonSides").value
+            );
+            const polyRadius = parseInt(
+              document.getElementById("polygonRadius").value
+            );
+            body = Bodies.polygon(
+              centerX,
+              centerY,
+              sides,
+              polyRadius,
+              mergedOptions
+            );
+            body.objectType = "polygon";
+            body.sides = sides;
+            body.radius = polyRadius;
+            break;
+
+          case "constraint":
+            // For constraints, we'll handle this differently since it requires two bodies
+            const constraintType =
+              document.getElementById("constraintType").value;
+            const stiffness = parseFloat(
+              document.getElementById("constraintStiffness").value
+            );
+            const length = parseInt(
+              document.getElementById("constraintLength").value
+            );
+
+            // We'll add a visual placeholder for the constraint
+            body = Bodies.circle(centerX, centerY, 10, {
+              isSensor: true,
+              isStatic: true,
+              render: {
+                fillStyle: "rgba(56, 189, 248, 0.5)",
+                strokeStyle: "rgba(56, 189, 248, 1)",
+                lineWidth: 2,
+              },
+            });
+
+            body.objectType = "constraintPlaceholder";
+            body.constraintType = constraintType;
+            body.stiffness = stiffness;
+            body.length = length;
+            break;
+        }
+
+        // Add custom ID and meta information
+        body.id = generateId();
+        body.label = `${objectType}_${body.id}`;
+        body.isCustomObject = true;
+
+        return body;
+      }
+
+      // Function to add object to the world and update UI
+      function addObject(body) {
+        World.add(engine.world, body);
+        objects.push(body);
+        updateObjectList();
+      }
+
+      // Function to create constraint between two bodies
+      function createConstraintBetween(bodyA, bodyB, options) {
+        const constraint = Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: { x: 0, y: 0 },
+          pointB: { x: 0, y: 0 },
+          stiffness: options.stiffness || 0.1,
+          length: options.length || 100,
+          render: {
+            type: "line",
+            anchors: false,
+            strokeStyle: "#38bdf8",
+            lineWidth: 2,
+          },
+        });
+
+        constraint.id = generateId();
+        constraint.label = `constraint_${constraint.id}`;
+        constraint.isCustomObject = true;
+        constraint.objectType = options.constraintType || "spring";
+
+        World.add(engine.world, constraint);
+        objects.push(constraint);
+        updateObjectList();
+      }
+
+      // Update the object list in the sidebar
+      function updateObjectList() {
+        const objectList = document.getElementById("objectList");
+        objectList.innerHTML = "";
+
+        if (objects.length === 0) {
+          objectList.innerHTML =
+            '<div class="object-list-empty">No objects added yet</div>';
+          return;
+        }
+
+        objects.forEach((obj, index) => {
+          const item = document.createElement("div");
+          item.className = "object-item";
+          if (selectedObject === obj) {
+            item.classList.add("selected");
+          }
+
+          const objType =
+            obj.objectType || (obj.constraint ? "constraint" : "unknown");
+          item.innerHTML = `
+            <span>${objType} ${index + 1}</span>
+            <span class="object-item-actions">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="cursor: pointer;" class="delete-icon">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+            </span>
+        `;
+
+          item.addEventListener("click", () => {
+            selectObject(obj);
+          });
+
+          const deleteIcon = item.querySelector(".delete-icon");
+          deleteIcon.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteObject(obj);
+          });
+
+          objectList.appendChild(item);
+        });
+      }
+
+      // Select an object and show its properties
+      function selectObject(obj) {
+        selectedObject = obj;
+        updateObjectList();
+
+        // Show object properties
+        const objectProperties = document.getElementById("objectProperties");
+
+        if (!selectedObject) {
+          objectProperties.classList.remove("visible");
+          document.getElementById("objectPhysicsControls").style.display =
+            "none";
+          return;
+        }
+
+        objectProperties.classList.add("visible");
+        document.getElementById("propType").textContent =
+          obj.objectType || "Unknown";
+        document.getElementById("propPosition").textContent = `x: ${Math.round(
+          obj.position.x
+        )}, y: ${Math.round(obj.position.y)}`;
+
+        // Size depends on object type
+        let sizeText = "";
+        if (obj.objectType === "rectangle") {
+          sizeText = `w: ${Math.round(obj.width)}, h: ${Math.round(
+            obj.height
+          )}`;
+        } else if (obj.objectType === "circle") {
+          sizeText = `r: ${Math.round(obj.radius)}`;
+        } else if (obj.objectType === "polygon") {
+          sizeText = `r: ${Math.round(obj.radius)}, sides: ${obj.sides}`;
+        } else {
+          sizeText = "n/a";
+        }
+        document.getElementById("propSize").textContent = sizeText;
+
+        // Angle in degrees
+        document.getElementById("propAngle").textContent = `${Math.round(
+          (obj.angle * 180) / Math.PI
+        )}°`;
+
+        // Physics properties
+        document.getElementById("propMass").textContent = obj.mass
+          ? obj.mass.toFixed(2)
+          : "n/a";
+        document.getElementById("propFriction").textContent = obj.friction
+          ? obj.friction.toFixed(2)
+          : "n/a";
+        document.getElementById("propRestitution").textContent = obj.restitution
+          ? obj.restitution.toFixed(2)
+          : "n/a";
+        document.getElementById("propStatic").textContent = obj.isStatic
+          ? "Yes"
+          : "No";
+
+        // Show physics controls if this is a body (not a constraint)
+        const objPhysicsControls = document.getElementById(
+          "objectPhysicsControls"
+        );
+        if (obj.type === "body") {
+          objPhysicsControls.style.display = "block";
+
+          // Set values for controls
+          document.getElementById("objectMass").value = obj.mass || 10;
+          document.getElementById("objectMassValue").textContent = obj.mass
+            ? obj.mass.toFixed(1)
+            : "10";
+
+          document.getElementById("objectFriction").value = obj.friction || 0.1;
+          document.getElementById("objectFrictionValue").textContent =
+            obj.friction ? obj.friction.toFixed(2) : "0.10";
+
+          document.getElementById("objectRestitution").value =
+            obj.restitution || 0.6;
+          document.getElementById("objectRestitutionValue").textContent =
+            obj.restitution ? obj.restitution.toFixed(2) : "0.60";
+
+          document.getElementById("isStatic").value = obj.isStatic
+            ? "true"
+            : "false";
+          document.getElementById("isSensor").value = obj.isSensor
+            ? "true"
+            : "false";
+        } else {
+          objPhysicsControls.style.display = "none";
+        }
+      }
+
+      // Delete an object
+      function deleteObject(obj) {
+        const index = objects.indexOf(obj);
+        if (index > -1) {
+          objects.splice(index, 1);
+          World.remove(engine.world, obj);
+
+          if (selectedObject === obj) {
+            selectedObject = null;
+            document
+              .getElementById("objectProperties")
+              .classList.remove("visible");
+          }
+
+          updateObjectList();
+        }
+      }
+
+      // Apply physics settings to the simulation
+      function applyPhysicsSettings() {
+        const gravityX = parseFloat(document.getElementById("gravityX").value);
+        const gravityY = parseFloat(document.getElementById("gravityY").value);
+
+        engine.gravity.x = gravityX;
+        engine.gravity.y = gravityY;
+
+        const globalFriction = parseFloat(
+          document.getElementById("globalFriction").value
+        );
+        const globalRestitution = parseFloat(
+          document.getElementById("globalRestitution").value
+        );
+
+        // Apply to all bodies
+        Composite.allBodies(engine.world).forEach((body) => {
+          if (body.isCustomObject) {
+            body.friction = globalFriction;
+            body.restitution = globalRestitution;
+          }
+        });
+
+        const timeScale = parseFloat(
+          document.getElementById("timeScale").value
+        );
+        engine.timing.timeScale = timeScale;
+      }
+
+      // Apply physics properties to a selected object
+      function applyObjectPhysics() {
+        if (!selectedObject || selectedObject.type !== "body") return;
+
+        const mass = parseFloat(document.getElementById("objectMass").value);
+        Body.setMass(selectedObject, mass);
+
+        const friction = parseFloat(
+          document.getElementById("objectFriction").value
+        );
+        selectedObject.friction = friction;
+
+        const restitution = parseFloat(
+          document.getElementById("objectRestitution").value
+        );
+        selectedObject.restitution = restitution;
+
+        const isStatic = document.getElementById("isStatic").value === "true";
+        Body.setStatic(selectedObject, isStatic);
+
+        const isSensor = document.getElementById("isSensor").value === "true";
+        selectedObject.isSensor = isSensor;
+
+        // Update properties display
+        selectObject(selectedObject);
+      }
+
+      // Start the physics simulation
+      function startSimulation() {
+        simulationRunning = true;
+        isPaused = false;
+
+        document.getElementById("startSimulationBtn").style.display = "none";
+        document.getElementById("resetSimulationBtn").style.display = "block";
+
+        document.getElementById("playIcon").style.display = "none";
+        document.getElementById("pauseIcon").style.display = "block";
+
+        // Run the engine
+        engine.timing.timeScale = parseFloat(
+          document.getElementById("timeScale").value
+        );
+        Engine.run(engine);
+      }
+
+      // Reset the simulation
+      function resetSimulation() {
+        simulationRunning = false;
+        isPaused = true;
+
+        document.getElementById("startSimulationBtn").style.display = "block";
+        document.getElementById("resetSimulationBtn").style.display = "none";
+
+        document.getElementById("playIcon").style.display = "block";
+        document.getElementById("pauseIcon").style.display = "none";
+
+        // Stop the engine
+        Engine.clear(engine);
+
+        // Recreate the engine
+        Engine.run(engine);
+        engine.timing.timeScale = 0;
+      }
+
+      // Toggle play/pause
+      function togglePlayPause() {
+        if (!simulationRunning) {
+          startSimulation();
+          return;
+        }
+
+        isPaused = !isPaused;
+
+        if (isPaused) {
+          // Pause simulation
+          engine.timing.timeScale = 0;
+          document.getElementById("playIcon").style.display = "block";
+          document.getElementById("pauseIcon").style.display = "none";
+        } else {
+          // Resume simulation
+          engine.timing.timeScale = parseFloat(
+            document.getElementById("timeScale").value
+          );
+          document.getElementById("playIcon").style.display = "none";
+          document.getElementById("pauseIcon").style.display = "block";
+        }
+      }
+
+      // Export physics configuration
+      function exportPhysics() {
+        const format = document.getElementById("exportFormat").value;
+
+        // Build exportable physics config
+        const physicsConfig = {
+          gravity: {
+            x: engine.gravity.x,
+            y: engine.gravity.y,
+          },
+          objects: objects.map((obj) => {
+            // Create basic serializable object
+            const serialized = {
+              type:
+                obj.objectType || (obj.constraint ? "constraint" : "unknown"),
+              id: obj.id,
+              position: obj.position
+                ? { x: obj.position.x, y: obj.position.y }
+                : null,
+              angle: obj.angle || 0,
+              properties: {
+                isStatic: obj.isStatic || false,
+                isSensor: obj.isSensor || false,
+                friction: obj.friction || 0.1,
+                restitution: obj.restitution || 0.6,
+                mass: obj.mass || 10,
+              },
+            };
+
+            // Add shape-specific details
+            if (obj.objectType === "rectangle") {
+              serialized.width = obj.width;
+              serialized.height = obj.height;
+            } else if (obj.objectType === "circle") {
+              serialized.radius = obj.radius;
+            } else if (obj.objectType === "polygon") {
+              serialized.radius = obj.radius;
+              serialized.sides = obj.sides;
+            } else if (obj.constraint) {
+              serialized.stiffness = obj.stiffness;
+              serialized.length = obj.length;
+              serialized.bodyA = obj.bodyA ? obj.bodyA.id : null;
+              serialized.bodyB = obj.bodyB ? obj.bodyB.id : null;
+            }
+
+            return serialized;
+          }),
+        };
+
+        // Format the output
+        let outputCode = "";
+        if (format === "json") {
+          outputCode = JSON.stringify(physicsConfig, null, 2);
+        } else {
+          outputCode = `// Physics configuration generated by Physics Game Designer
+const physicsConfig = ${JSON.stringify(physicsConfig, null, 2)};
+
+// Function to apply this configuration to a Matter.js engine
+function applyPhysicsConfig(engine, Bodies, World, Constraint) {
+    // Set gravity
+    engine.gravity.x = physicsConfig.gravity.x;
+    engine.gravity.y = physicsConfig.gravity.y;
+    
+    // Create objects map for constraints
+    const objectsMap = {};
+    
+    // Create and add bodies
+    physicsConfig.objects.forEach(obj => {
+        let body;
+        
+        switch(obj.type) {
+            case 'rectangle':
+                body = Bodies.rectangle(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.width,
+                    obj.height,
+                    {
+                        isStatic: obj.properties.isStatic,
+                        isSensor: obj.properties.isSensor,
+                        friction: obj.properties.friction,
+                        restitution: obj.properties.restitution
+                    }
+                );
+                Body.setMass(body, obj.properties.mass);
+                Body.setAngle(body, obj.angle);
+                World.add(engine.world, body);
+                objectsMap[obj.id] = body;
+                break;
+                
+            case 'circle':
+                body = Bodies.circle(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.radius,
+                    {
+                        isStatic: obj.properties.isStatic,
+                        isSensor: obj.properties.isSensor,
+                        friction: obj.properties.friction,
+                        restitution: obj.properties.restitution
+                    }
+                );
+                Body.setMass(body, obj.properties.mass);
+                World.add(engine.world, body);
+                objectsMap[obj.id] = body;
+                break;
+                
+            case 'polygon':
+                body = Bodies.polygon(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.sides,
+                    obj.radius,
+                    {
+                        isStatic: obj.properties.isStatic,
+                        isSensor: obj.properties.isSensor,
+                        friction: obj.properties.friction,
+                        restitution: obj.properties.restitution
+                    }
+                );
+                Body.setMass(body, obj.properties.mass);
+                Body.setAngle(body, obj.angle);
+                World.add(engine.world, body);
+                objectsMap[obj.id] = body;
+                break;
+        }
+    });
+    
+    // Add constraints after all bodies are created
+    physicsConfig.objects.forEach(obj => {
+        if (obj.type === 'constraint' && obj.bodyA && obj.bodyB) {
+            const constraint = Constraint.create({
+                bodyA: objectsMap[obj.bodyA],
+                bodyB: objectsMap[obj.bodyB],
+                stiffness: obj.stiffness,
+                length: obj.length
+            });
+            
+            World.add(engine.world, constraint);
+        }
+    });
+}`;
+        }
+
+        document.getElementById("exportCode").textContent = outputCode;
+        document.getElementById("exportModal").classList.add("visible");
+      }
+
+      // Import physics configuration
+      function importPhysics() {
+        try {
+          const importCodeText = document.getElementById("importCode").value;
+          let physicsConfig;
+
+          // Try to parse as JSON, then as JS object
+          try {
+            physicsConfig = JSON.parse(importCodeText);
+          } catch (e) {
+            // If JSON parsing fails, try eval (careful, security risk in real apps)
+            try {
+              // This is a simplified approach - in a real app, use a proper JS parser
+              const code = importCodeText.replace(/const physicsConfig =/, "");
+              physicsConfig = eval(`(${code})`);
+            } catch (e2) {
+              throw new Error(
+                "Unable to parse import code. Please use valid JSON or JavaScript."
+              );
+            }
+          }
+
+          // Clear current objects
+          objects.forEach((obj) => {
+            World.remove(engine.world, obj);
+          });
+          objects = [];
+
+          // Set gravity
+          if (physicsConfig.gravity) {
+            engine.gravity.x = physicsConfig.gravity.x;
+            engine.gravity.y = physicsConfig.gravity.y;
+
+            // Update UI controls
+            document.getElementById("gravityX").value = engine.gravity.x;
+            document.getElementById("gravityY").value = engine.gravity.y;
+            document.getElementById("gravityXValue").textContent =
+              engine.gravity.x;
+            document.getElementById("gravityYValue").textContent =
+              engine.gravity.y;
+          }
+
+          // Create objects map for resolving constraints
+          const objectsMap = {};
+
+          // First pass: create all bodies
+          if (physicsConfig.objects && Array.isArray(physicsConfig.objects)) {
+            physicsConfig.objects.forEach((obj) => {
+              if (obj.type === "constraint") return; // Skip constraints for now
+
+              let body;
+
+              switch (obj.type) {
+                case "rectangle":
+                  body = Bodies.rectangle(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.width,
+                    obj.height,
+                    {
+                      isStatic: obj.properties.isStatic,
+                      isSensor: obj.properties.isSensor,
+                      friction: obj.properties.friction,
+                      restitution: obj.properties.restitution,
+                      render: {
+                        fillStyle: "#38bdf8",
+                        strokeStyle: "#0ea5e9",
+                        lineWidth: 2,
+                      },
+                    }
+                  );
+                  body.objectType = "rectangle";
+                  body.width = obj.width;
+                  body.height = obj.height;
+                  break;
+
+                case "circle":
+                  body = Bodies.circle(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.radius,
+                    {
+                      isStatic: obj.properties.isStatic,
+                      isSensor: obj.properties.isSensor,
+                      friction: obj.properties.friction,
+                      restitution: obj.properties.restitution,
+                      render: {
+                        fillStyle: "#38bdf8",
+                        strokeStyle: "#0ea5e9",
+                        lineWidth: 2,
+                      },
+                    }
+                  );
+                  body.objectType = "circle";
+                  body.radius = obj.radius;
+                  break;
+
+                case "polygon":
+                  body = Bodies.polygon(
+                    obj.position.x,
+                    obj.position.y,
+                    obj.sides,
+                    obj.radius,
+                    {
+                      isStatic: obj.properties.isStatic,
+                      isSensor: obj.properties.isSensor,
+                      friction: obj.properties.friction,
+                      restitution: obj.properties.restitution,
+                      render: {
+                        fillStyle: "#38bdf8",
+                        strokeStyle: "#0ea5e9",
+                        lineWidth: 2,
+                      },
+                    }
+                  );
+                  body.objectType = "polygon";
+                  body.sides = obj.sides;
+                  body.radius = obj.radius;
+                  break;
+              }
+
+              if (body) {
+                Body.setMass(body, obj.properties.mass);
+                if (obj.angle) {
+                  Body.setAngle(body, obj.angle);
+                }
+
+                body.id = obj.id;
+                body.isCustomObject = true;
+
+                World.add(engine.world, body);
+                objects.push(body);
+                objectsMap[obj.id] = body;
+              }
+            });
+
+            // Second pass: create constraints
+            physicsConfig.objects.forEach((obj) => {
+              if (obj.type !== "constraint") return;
+
+              if (
+                obj.bodyA &&
+                obj.bodyB &&
+                objectsMap[obj.bodyA] &&
+                objectsMap[obj.bodyB]
+              ) {
+                const constraint = Constraint.create({
+                  bodyA: objectsMap[obj.bodyA],
+                  bodyB: objectsMap[obj.bodyB],
+                  stiffness: obj.stiffness || 0.1,
+                  length: obj.length || 100,
+                  render: {
+                    type: "line",
+                    anchors: false,
+                    strokeStyle: "#38bdf8",
+                    lineWidth: 2,
+                  },
+                });
+
+                constraint.id = obj.id;
+                constraint.isCustomObject = true;
+                constraint.objectType = "constraint";
+
+                World.add(engine.world, constraint);
+                objects.push(constraint);
+              }
+            });
+          }
+
+          updateObjectList();
+          document.getElementById("importModal").classList.remove("visible");
+        } catch (error) {
+          alert("Error importing physics: " + error.message);
+        }
+      }
+
+      // Load a template
+      function loadTemplate(templateName) {
+        clearCanvas();
+
+        switch (templateName) {
+          case "pendulum":
+            createPendulumTemplate();
+            break;
+          case "newtons-cradle":
+            createNewtonsCradleTemplate();
+            break;
+          case "bridge":
+            createBridgeTemplate();
+            break;
+          case "ragdoll":
+            createRagdollTemplate();
+            break;
+          case "catapult":
+            createCatapultTemplate();
+            break;
+          case "pinball":
+            createPinballTemplate();
+            break;
+          case "car":
+            createCarTemplate();
+            break;
+          case "platformer":
+            createPlatformerTemplate();
+            break;
+        }
+      }
+
+      // Create a pendulum template
+      function createPendulumTemplate() {
+        // Create anchor
+        const anchor = Bodies.rectangle(renderWidth / 2, 50, 50, 20, {
+          isStatic: true,
+          render: { fillStyle: "#475569" },
+        });
+        anchor.objectType = "rectangle";
+        anchor.id = generateId();
+        anchor.isCustomObject = true;
+
+        // Create pendulum weight
+        const pendulum = Bodies.circle(renderWidth / 2, 250, 40, {
+          render: { fillStyle: "#38bdf8" },
+        });
+        pendulum.objectType = "circle";
+        pendulum.id = generateId();
+        pendulum.isCustomObject = true;
+
+        // Create constraint
+        const constraint = Constraint.create({
+          bodyA: anchor,
+          bodyB: pendulum,
+          pointA: { x: 0, y: 0 },
+          pointB: { x: 0, y: 0 },
+          length: 200,
+          stiffness: 0.1,
+          render: {
+            type: "line",
+            strokeStyle: "#94a3b8",
+          },
+        });
+        constraint.id = generateId();
+        constraint.isCustomObject = true;
+        constraint.objectType = "constraint";
+
+        // Add bodies and constraint to the world
+        World.add(engine.world, [anchor, pendulum, constraint]);
+        objects.push(anchor, pendulum, constraint);
+
+        updateObjectList();
+      }
+
+      // Sample implementation of Newton's Cradle template
+      function createNewtonsCradleTemplate() {
+        const cradle = Matter.Composites.newtonsCradle(
+          renderWidth / 2 - 100,
+          100,
+          5,
+          30,
+          200
+        );
+
+        // Add all bodies and constraints to our objects array
+        cradle.bodies.forEach((body) => {
+          body.objectType = "circle";
+          body.id = generateId();
+          body.isCustomObject = true;
+          objects.push(body);
+        });
+
+        cradle.constraints.forEach((constraint) => {
+          constraint.id = generateId();
+          constraint.isCustomObject = true;
+          constraint.objectType = "constraint";
+          objects.push(constraint);
+        });
+
+        World.add(engine.world, cradle);
+        updateObjectList();
+
+        // Give the first ball a push
+        Body.applyForce(cradle.bodies[0], cradle.bodies[0].position, {
+          x: -0.05,
+          y: 0,
+        });
+      }
+
+      // Clear canvas (for templates)
+      function clearCanvas() {
+        objects.forEach((obj) => {
+          World.remove(engine.world, obj);
+        });
+        objects = [];
+        selectedObject = null;
+        updateObjectList();
+        document.getElementById("objectProperties").classList.remove("visible");
+      }
+
+      // Event listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        // Tool sections toggle
+        document.querySelectorAll(".tool-header").forEach((header) => {
+          header.addEventListener("click", () => {
+            const content = header.nextElementSibling;
+            const indicator = header.querySelector("span");
+
+            if (content.classList.contains("collapsed")) {
+              content.classList.remove("collapsed");
+              indicator.textContent = "▼";
+            } else {
+              content.classList.add("collapsed");
+              indicator.textContent = "►";
+            }
+          });
+        });
+
+        // Object type change handler
+        document
+          .getElementById("objectType")
+          .addEventListener("change", function () {
+            const type = this.value;
+            document.querySelectorAll(".shape-options").forEach((el) => {
+              el.style.display = "none";
+            });
+
+            document.getElementById(`${type}Options`).style.display = "block";
+
+            // Hide color option for constraints
+            if (type === "constraint") {
+              document.getElementById("objectColorOption").style.display =
+                "none";
+            } else {
+              document.getElementById("objectColorOption").style.display =
+                "block";
+            }
+          });
+
+        // Add object button
+        document
+          .getElementById("addObjectBtn")
+          .addEventListener("click", () => {
+            const body = createObject();
+            addObject(body);
+            selectObject(body);
+          });
+
+        // Delete selected button
+        document
+          .getElementById("deleteSelectedBtn")
+          .addEventListener("click", () => {
+            if (selectedObject) {
+              deleteObject(selectedObject);
+            }
+          });
+
+        // Apply physics button
+        document
+          .getElementById("applyPhysicsBtn")
+          .addEventListener("click", applyPhysicsSettings);
+
+        // Apply object physics button
+        document
+          .getElementById("applyObjectPhysicsBtn")
+          .addEventListener("click", applyObjectPhysics);
+
+        // Start/reset simulation buttons
+        document
+          .getElementById("startSimulationBtn")
+          .addEventListener("click", startSimulation);
+        document
+          .getElementById("resetSimulationBtn")
+          .addEventListener("click", resetSimulation);
+        document
+          .getElementById("playPauseBtn")
+          .addEventListener("click", togglePlayPause);
+        document
+          .getElementById("resetBtn")
+          .addEventListener("click", resetSimulation);
+
+        // Export physics button
+        document
+          .getElementById("exportPhysicsBtn")
+          .addEventListener("click", exportPhysics);
+        document.getElementById("copyCodeBtn").addEventListener("click", () => {
+          const code = document.getElementById("exportCode").textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            alert("Code copied to clipboard!");
+          });
+        });
+        document
+          .getElementById("closeExportModal")
+          .addEventListener("click", () => {
+            document.getElementById("exportModal").classList.remove("visible");
+          });
+
+        // Import physics button
+        document
+          .getElementById("importPhysicsBtn")
+          .addEventListener("click", () => {
+            document.getElementById("importModal").classList.add("visible");
+          });
+        document
+          .getElementById("importCodeBtn")
+          .addEventListener("click", importPhysics);
+        document
+          .getElementById("closeImportModal")
+          .addEventListener("click", () => {
+            document.getElementById("importModal").classList.remove("visible");
+          });
+
+        // Sliders value display
+        document.querySelectorAll('input[type="range"]').forEach((slider) => {
+          const valueDisplay = document.getElementById(`${slider.id}Value`);
+          if (valueDisplay) {
+            slider.addEventListener("input", () => {
+              valueDisplay.textContent = slider.value;
+            });
+          }
+        });
+
+        // Control panel buttons
+        document.getElementById("selectMode").addEventListener("click", () => {
+          setActiveMode("select");
+        });
+
+        document.getElementById("moveMode").addEventListener("click", () => {
+          setActiveMode("move");
+        });
+
+        document.getElementById("panMode").addEventListener("click", () => {
+          setActiveMode("pan");
+        });
+
+        document.getElementById("zoomInBtn").addEventListener("click", () => {
+          zoomCanvas(0.1);
+        });
+
+        document.getElementById("zoomOutBtn").addEventListener("click", () => {
+          zoomCanvas(-0.1);
+        });
+
+        // Template items
+        document.querySelectorAll(".template-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            const templateName = item.getAttribute("data-template");
+            loadTemplate(templateName);
+          });
+        });
+
+        // Sidebar tabs
+        document.querySelectorAll(".sidebar-tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const tabName = tab.getAttribute("data-tab");
+
+            // Make this tab active
+            document.querySelectorAll(".sidebar-tab").forEach((t) => {
+              t.classList.remove("active");
+            });
+            tab.classList.add("active");
+
+            // Show corresponding content
+            document.querySelectorAll(".sidebar-content").forEach((content) => {
+              content.classList.remove("active");
+            });
+            document
+              .querySelector(`.sidebar-content[data-tab-content="${tabName}"]`)
+              .classList.add("active");
+          });
+        });
+
+        // Navigation buttons
+        document.getElementById("homeButton").addEventListener("click", () => {
+          window.location.href = "index.html";
+        });
+
+        document
+          .getElementById("bgDesignerButton")
+          .addEventListener("click", () => {
+            window.location.href = "background-designer.html";
+          });
+
+        document
+          .getElementById("tutorialsButton")
+          .addEventListener("click", () => {
+            window.location.href = "tutorials.html";
+          });
+      });
+
+      // Set active mode
+      function setActiveMode(mode) {
+        currentMode = mode;
+
+        // Update UI
+        document.querySelectorAll(".control-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+
+        document.getElementById(`${mode}Mode`).classList.add("active");
+
+        // Handle mouse constraint based on mode
+        if (mode === "select") {
+          // Enable mouse constraint for dragging objects
+          mouseConstraint.constraint.stiffness = 0.2;
+        } else if (mode === "move") {
+          // Disable mouse constraint for free movement
+          mouseConstraint.constraint.stiffness = 0.0;
+        } else if (mode === "pan") {
+          // Disable mouse constraint for panning the viewport
+          mouseConstraint.constraint.stiffness = 0.0;
+        }
+      }
+
+      // Zoom the canvas
+      function zoomCanvas(delta) {
+        zoomLevel = Math.max(0.5, Math.min(2, zoomLevel + delta));
+
+        // Apply zoom to render context
+        Render.lookAt(render, {
+          min: {
+            x: worldBounds.min.x / zoomLevel,
+            y: worldBounds.min.y / zoomLevel,
+          },
+          max: {
+            x: worldBounds.max.x / zoomLevel,
+            y: worldBounds.max.y / zoomLevel,
+          },
+        });
+      }
+
+      // Initialize everything when the page loads
+      window.addEventListener("load", () => {
+        // Any startup logic when page loads
+        document
+          .getElementById("objectType")
+          .dispatchEvent(new Event("change"));
+      });
+    </script>
+  </body>
+</html>

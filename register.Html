@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - GamerHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap"
+      rel="stylesheet"/>
+    <style>
+      :root {
+          --glow-color-1: #00ffff; /* Cyan */
+          --glow-color-2: #ff00ff; /* Magenta */
+          --container-bg: rgba(0, 0, 0, 0.7);
+          --border-color: rgba(0, 255, 255, 0.3);
+          --input-bg: rgba(255, 255, 255, 0.1);
+          --input-focus-bg: rgba(255, 255, 255, 0.2);
+          --button-gradient: linear-gradient(90deg, var(--glow-color-1), var(--glow-color-2));
+          --button-hover-gradient: linear-gradient(90deg, var(--glow-color-2), var(--glow-color-1));
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Orbitron", sans-serif;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+        background-color: #1a1a1a; /* Dark grey background */
+        perspective: 1000px; /* For 3D effects */
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      /* Floating Emojis Background */
+      .emoji-background {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: -2; /* Below the register container */
+          transform-style: preserve-3d;
+      }
+
+      .emoji-background .emoji-item {
+          position: absolute;
+          font-size: 60px; /* Size of the emojis */
+          opacity: 0.3; /* Subtle transparency */
+          pointer-events: none; /* Allow clicks to pass through */
+          animation: float 15s ease-in-out infinite alternate,
+                     rotateEmoji 10s linear infinite; /* Floating and rotation animations */
+      }
+
+      /* Define positions and animation delays for individual emojis */
+      .emoji-item:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s, 0s; }
+      .emoji-item:nth-child(2) { top: 80%; left: 15%; animation-delay: 2s, 1s; font-size: 70px; }
+      .emoji-item:nth-child(3) { top: 30%; left: 90%; animation-delay: 4s, 2s; }
+      .emoji-item:nth-child(4) { top: 60%; left: 70%; animation-delay: 6s, 3s; font-size: 50px; }
+      .emoji-item:nth-child(5) { top: 20%; left: 40%; animation-delay: 8s, 4s; }
+      .emoji-item:nth-child(6) { top: 70%; left: 50%; animation-delay: 10s, 5s; font-size: 80px; }
+      .emoji-item:nth-child(7) { top: 45%; left: 25%; animation-delay: 12s, 6s; }
+      .emoji-item:nth-child(8) { top: 55%; left: 85%; animation-delay: 14s, 7s; font-size: 65px; }
+      /* Add more emoji-items and adjust positions/delays as needed */
+
+
+      @keyframes float {
+          0% { transform: translateY(0) rotate(0deg); }
+          100% { transform: translateY(-30px) rotate(10deg); } /* Subtle vertical float and tilt */
+      }
+
+      @keyframes rotateEmoji {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+
+
+      /* Register Container Styling (Reusing .login-container class for consistency) */
+      .login-container {
+        position: relative;
+        width: 90%; /* Make width responsive */
+        max-width: 450px; /* Set a maximum width */
+        max-height: 90vh; /* Limit height to 90% of viewport height */
+        padding: 30px; /* Reduced padding */
+        box-sizing: border-box; /* Include padding in the element's total width */
+        background: var(--container-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        box-shadow: 0 0 50px var(--glow-color-1), 0 0 100px var(--glow-color-2); /* Stronger, dual-color shadow */
+        backdrop-filter: blur(25px); /* More blur for stronger frosted glass */
+        -webkit-backdrop-filter: blur(25px); /* Safari support */
+        text-align: center;
+        overflow-y: auto; /* Enable vertical scrolling if needed */
+        z-index: 1; /* Ensure it's above background layers */
+        transform-style: preserve-3d; /* For potential inner 3D effects */
+        transition: transform 0.5s ease; /* Smooth transition for parallax */
+      }
+
+      /* Remove the old ::before from login-container */
+      .login-container::before {
+          content: none;
+      }
+
+      .login-container h1 {
+        font-size: 36px; /* Slightly smaller */
+        margin-bottom: 25px; /* Less space */
+        color: var(--glow-color-1);
+        text-shadow: 0 0 20px var(--glow-color-1), 0 0 40px var(--glow-color-1); /* Enhanced shadow */
+      }
+
+      .login-container input {
+        width: 100%;
+        padding: 15px; /* Smaller padding */
+        margin: 10px 0; /* Less space */
+        border: none;
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: white;
+        font-size: 16px; /* Smaller font */
+        outline: none;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3); /* Subtle shadow */
+        transition: 0.3s ease;
+      }
+
+      .login-container input:focus {
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.7), 0 0 40px rgba(255, 0, 255, 0.5); /* More prominent focus shadow */
+        background: var(--input-focus-bg);
+        border: 1px solid var(--glow-color-1); /* Add a subtle border on focus */
+      }
+
+      .login-container button {
+        width: 100%;
+        padding: 15px; /* Smaller padding */
+        margin-top: 20px; /* Less space */
+        border: none;
+        border-radius: 10px;
+        background: var(--button-gradient);
+        color: black;
+        font-size: 20px; /* Smaller font */
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease; /* Smooth transition for all properties */
+        box-shadow: 0 0 20px var(--glow-color-1), 0 0 30px var(--glow-color-2); /* Enhanced shadow */
+      }
+
+      .login-container button:hover {
+        background: var(--button-hover-gradient);
+        box-shadow: 0 0 30px var(--glow-color-2), 0 0 40px var(--glow-color-1); /* More prominent hover shadow */
+        transform: translateY(-5px) scale(1.02); /* Subtle lift and scale effect */
+      }
+
+      .login-container a {
+        display: block;
+        margin-top: 20px; /* Less space */
+        color: var(--glow-color-1);
+        text-decoration: none;
+        font-size: 16px; /* Slightly larger font */
+        transition: 0.3s ease;
+      }
+
+      .login-container a:hover {
+        color: var(--glow-color-2);
+        text-shadow: 0 0 15px var(--glow-color-2); /* Enhanced shadow */
+      }
+
+      .login-container .emoji {
+        font-size: 60px; /* Smaller emoji */
+        margin-bottom: 20px; /* Less space */
+        animation: bounce 1.5s infinite ease-in-out; /* Smoother bounce */
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-15px); /* Smaller bounce */
+        }
+      }
+
+      /* Message Style */
+      .message {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 255, 0, 0.8);
+          color: black;
+          padding: 10px 20px;
+          border-radius: 5px;
+          font-size: 18px;
+          font-weight: bold;
+          z-index: 10;
+          opacity: 0;
+          transition: opacity 0.5s ease-in-out;
+      }
+
+      .message.show {
+          opacity: 1;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="emoji-background">
+        <div class="emoji-item">🎮</div>
+        <div class="emoji-item">🕹️</div>
+        <div class="emoji-item">🎮</div>
+        <div class="emoji-item">🕹️</div>
+        <div class="emoji-item">🎮</div>
+        <div class="emoji-item">🕹️</div>
+        <div class="emoji-item">🎮</div>
+        <div class="emoji-item">🕹️</div>
+        <!-- Add more emoji-item divs for more emojis -->
+    </div>
+
+    <div class="login-container"> <!-- Reusing login-container class for styling -->
+      <div class="emoji">🚀✨</div> <!-- Changed emoji -->
+      <h1>Register to Play</h1> <!-- Changed heading -->
+      <form id="registerForm"> <!-- Removed action and method attributes -->
+        <input
+          type="text"
+          name="username"
+          placeholder="Choose a username"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Create a password"
+          required
+        />
+         <input
+          type="password"
+          name="confirm_password"
+          placeholder="Confirm password"
+          required
+        />
+        <button type="submit">Register</button>
+      </form>
+      <a href="Login.Html">Already have an account? Login 🔑</a> <!-- Link to Login page -->
+    </div>
+
+    <div id="message" class="message"></div>
+    <script>
+      const form = document.getElementById('registerForm');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault(); // prevent normal form submission
+    
+        const user = {
+          username: form.elements.username.value,
+          email: form.elements.email.value,
+          password: form.elements.password.value,
+          confirm_password: form.elements.confirm_password.value
+        };
+    
+        const res = await fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(user)
+        });
+    
+        const message = await res.text();
+        
+        // Display message in the message div instead of alert
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = message;
+        messageDiv.classList.add('show');
+    
+        if (res.ok) {
+          // Wait for 2 seconds before redirecting
+          setTimeout(() => {
+            window.location.href = '/index.html'; // Redirect to home only if successful
+          }, 2000);
+        } else {
+          // Hide message after 3 seconds if there's an error
+          setTimeout(() => {
+            messageDiv.classList.remove('show');
+          }, 3000);
+        }
+      });
+    </script>
+   
+  </body>
+</html>

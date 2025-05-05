@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        /* Global Styles */
+:root {
+    --bg-primary: #1a1f25;
+    --bg-secondary: #1e242b;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --accent-color: #0078d4;
+    --border-color: #2d2d2d;
+    --panel-width: 250px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+/* Editor Layout */
+.editor {
+    display: grid;
+    grid-template-columns: var(--panel-width) 1fr;
+    height: 100vh;
+    gap: 1px;
+    background-color: var(--border-color);
+}
+
+/* Panel Styles */
+.panel {
+    background-color: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    background-color: var(--bg-secondary);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.panel-controls button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.panel-controls button:hover {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* Tree View */
+.tree-view {
+    list-style: none;
+}
+
+.tree-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+.tree-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tree-item.selected {
+    background-color: rgba(0, 120, 212, 0.2);
+    color: var(--text-primary);
+}
+
+.tree-toggle {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.tree-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-item i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Viewport */
+.viewport {
+    background-color: var(--bg-primary);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#viewport {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.toolbar {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--bg-secondary);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tool-group {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+}
+
+.tool-btn, .view-controls button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.tool-btn:hover, .view-controls button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.tool-btn.active {
+    background-color: var(--accent-color);
+    color: var(--text-primary);
+}
+
+.view-controls {
+    display: flex;
+    gap: 4px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border-color);
+}
+
+.viewport-stats {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    gap: 16px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+}
+
+/* Grid and Scene */
+.grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: 50px 50px;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.scene {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.cube {
+    width: 100px;
+    height: 100px;
+    background-color: #0078d4;
+    transform-style: preserve-3d;
+    transform: rotateX(45deg) rotateZ(45deg);
+    position: relative;
+}
+
+.cube::before,
+.cube::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.cube::before {
+    background-color: rgba(0, 120, 212, 0.8);
+    transform: rotateY(90deg) translateZ(50px);
+}
+
+.cube::after {
+    background-color: rgba(0, 120, 212, 0.6);
+    transform: rotateX(90deg) translateZ(50px);
+}
+
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Editor</title>
+ 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="editor">
+        <!-- Left Panel - Hierarchy -->
+        <div class="panel hierarchy">
+            <div class="panel-header">
+                <span class="header-title">HIERARCHY</span>
+                <div class="panel-controls">
+                    <button id="addCube" title="Add Cube"><i class="fas fa-cube"></i></button>
+                    <button id="addSphere" title="Add Sphere"><i class="fas fa-circle"></i></button>
+                    <button id="addLight" title="Add Light"><i class="fas fa-lightbulb"></i></button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <ul id="sceneHierarchy" class="tree-view">
+                    <li class="tree-item" data-type="scene">
+                        <span class="tree-toggle"><i class="fas fa-chevron-right"></i></span>
+                        <i class="fas fa-sitemap"></i>
+                        <span class="item-name">Scene</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Viewport -->
+        <div class="viewport">
+            <div class="toolbar">
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="translate" title="Move"><i class="fas fa-arrows-alt"></i></button>
+                    <button class="tool-btn" data-tool="rotate" title="Rotate"><i class="fas fa-sync"></i></button>
+                    <button class="tool-btn" data-tool="scale" title="Scale"><i class="fas fa-expand-arrows-alt"></i></button>
+                </div>
+                <div class="view-controls">
+                    <button data-view="top" title="Top View"><i class="fas fa-arrow-down"></i></button>
+                    <button data-view="front" title="Front View"><i class="fas fa-arrow-right"></i></button>
+                    <button data-view="side" title="Side View"><i class="fas fa-arrow-left"></i></button>
+                    <button data-view="perspective" title="Perspective"><i class="fas fa-cube"></i></button>
+                </div>
+            </div>
+            <canvas id="viewport"></canvas>
+            <div class="viewport-stats">
+                <span id="fps">FPS: 60</span>
+                <span id="objectInfo">Selected: None</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        /**
+ * Professional Game Editor Implementation
+ * A robust 3D scene editor with advanced object manipulation and scene management
+ * @author Cascade Game Editor Team
+ * @version 1.0.0
+ */
+
+// Constants and configurations
+const CONFIG = {
+    CAMERA: {
+        FOV: 75,
+        NEAR: 0.1,
+        FAR: 1000,
+        INITIAL_POSITION: [5, 5, 5]
+    },
+    GRID: {
+        SIZE: 20,
+        DIVISIONS: 20,
+        MAIN_COLOR: 0x404040,
+        SECONDARY_COLOR: 0x282828
+    },
+    COLORS: {
+        BACKGROUND: 0x1a1f25,
+        OBJECT_DEFAULT: 0x0078d4
+    },
+    CONTROLS: {
+        DAMPING_FACTOR: 0.05
+    }
+};
+
+/**
+ * GameEditor class - Main controller for the 3D editor environment
+ */
+class GameEditor {
+    /**
+     * Initialize the game editor
+     * @constructor
+     */
+    constructor() {
+        this.initializeComponents();
+        this.setupScene();
+        this.setupEventHandlers();
+        this.startRenderLoop();
+    }
+
+    /**
+     * Initialize core Three.js components
+     * @private
+     */
+    initializeComponents() {
+        try {
+            // Core components
+            this.scene = new THREE.Scene();
+            this.camera = new THREE.PerspectiveCamera(
+                CONFIG.CAMERA.FOV,
+                this.calculateAspectRatio(),
+                CONFIG.CAMERA.NEAR,
+                CONFIG.CAMERA.FAR
+            );
+
+            // Renderer setup
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('viewport'),
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true
+            });
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Controls
+            this.transformControls = new THREE.TransformControls(this.camera, this.renderer.domElement);
+            this.orbitControls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+
+            // State management
+            this.objects = new Map();
+            this.selectedObject = null;
+            this.currentTool = 'translate';
+            this.lastFrame = 0;
+            this.isPlaying = true;
+
+            this.updateRendererSize();
+        } catch (error) {
+            console.error('Failed to initialize components:', error);
+            this.showErrorMessage('Failed to initialize the editor. Please refresh the page.');
+        }
+    }
+
+    /**
+     * Set up the initial scene with lighting and grid
+     * @private
+     */
+    setupScene() {
+        try {
+            // Camera positioning
+            this.camera.position.fromArray(CONFIG.CAMERA.INITIAL_POSITION);
+            this.camera.lookAt(0, 0, 0);
+
+            // Controls configuration
+            this.orbitControls.enableDamping = true;
+            this.orbitControls.dampingFactor = CONFIG.CONTROLS.DAMPING_FACTOR;
+            this.scene.add(this.transformControls);
+
+            // Environment setup
+            this.setupGrid();
+            this.setupLighting();
+            this.setupEnvironment();
+
+            // Initialize scene hierarchy
+            this.initializeHierarchy();
+        } catch (error) {
+            console.error('Failed to setup scene:', error);
+            this.showErrorMessage('Failed to setup the scene environment.');
+        }
+    }
+
+    /**
+     * Set up the scene grid
+     * @private
+     */
+    setupGrid() {
+        const gridHelper = new THREE.GridHelper(
+            CONFIG.GRID.SIZE,
+            CONFIG.GRID.DIVISIONS,
+            CONFIG.GRID.MAIN_COLOR,
+            CONFIG.GRID.SECONDARY_COLOR
+        );
+        gridHelper.position.y = -0.01; // Slight offset to prevent z-fighting
+        this.scene.add(gridHelper);
+        this.addToHierarchy('Grid', 'grid', gridHelper);
+    }
+
+    /**
+     * Set up scene lighting
+     * @private
+     */
+    setupLighting() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        this.scene.add(ambientLight);
+        this.addToHierarchy('Ambient Light', 'light', ambientLight);
+
+        // Main directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.1;
+        directionalLight.shadow.camera.far = 500;
+        this.scene.add(directionalLight);
+        this.addToHierarchy('Directional Light', 'light', directionalLight);
+    }
+
+    /**
+     * Set up additional environment features
+     * @private
+     */
+    setupEnvironment() {
+        this.renderer.setClearColor(CONFIG.COLORS.BACKGROUND);
+        this.scene.fog = new THREE.Fog(CONFIG.COLORS.BACKGROUND, 20, 100);
+    }
+
+    /**
+     * Initialize the scene hierarchy
+     * @private
+     */
+    setupEventHandlers() {
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.handleToolSelection(btn));
+        });
+
+        // View controls
+        document.querySelectorAll('.view-controls button').forEach(btn => {
+            btn.addEventListener('click', () => this.handleViewChange(btn.dataset.view));
+        });
+
+        // Object creation
+        document.getElementById('addCube').addEventListener('click', () => this.createObject('cube'));
+        document.getElementById('addSphere').addEventListener('click', () => this.createObject('sphere'));
+        document.getElementById('addLight').addEventListener('click', () => this.createObject('light'));
+
+        // Transform control events
+        this.transformControls.addEventListener('dragging-changed', event => {
+            this.orbitControls.enabled = !event.value;
+        });
+
+        // Window resize handling
+        window.addEventListener('resize', () => this.handleResize());
+
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+    }
+
+    /**
+     * Handle tool selection
+     * @param {HTMLElement} button - The selected tool button
+     * @private
+     */
+    handleToolSelection(button) {
+        document.querySelector('.tool-btn.active')?.classList.remove('active');
+        button.classList.add('active');
+        this.currentTool = button.dataset.tool;
+        this.transformControls.setMode(this.currentTool);
+        this.updateStatusBar(`Tool: ${this.currentTool.charAt(0).toUpperCase() + this.currentTool.slice(1)}`);
+    }
+
+    /**
+     * Create a new object in the scene
+     * @param {string} type - Type of object to create
+     * @private
+     */
+    createObject(type) {
+        try {
+            let object;
+            switch (type) {
+                case 'cube':
+                    object = this.createCube();
+                    break;
+                case 'sphere':
+                    object = this.createSphere();
+                    break;
+                case 'light':
+                    object = this.createPointLight();
+                    break;
+                default:
+                    throw new Error(`Unknown object type: ${type}`);
+            }
+
+            const id = this.addToHierarchy(
+                `${type.charAt(0).toUpperCase() + type.slice(1)}`,
+                type,
+                object
+            );
+            this.selectObject(id);
+            this.updateStatusBar(`Created new ${type}`);
+        } catch (error) {
+            console.error(`Failed to create ${type}:`, error);
+            this.showErrorMessage(`Failed to create ${type}`);
+        }
+    }
+
+    /**
+     * Create a cube mesh
+     * @returns {THREE.Mesh}
+     * @private
+     */
+    createCube() {
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshStandardMaterial({
+            color: CONFIG.COLORS.OBJECT_DEFAULT,
+            metalness: 0.1,
+            roughness: 0.8
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        this.scene.add(cube);
+        return cube;
+    }
+
+    /**
+     * Create a sphere mesh
+     * @returns {THREE.Mesh}
+     * @private
+     */
+    createSphere() {
+        const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const material = new THREE.MeshStandardMaterial({
+            color: CONFIG.COLORS.OBJECT_DEFAULT,
+            metalness: 0.1,
+            roughness: 0.8
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.castShadow = true;
+        sphere.receiveShadow = true;
+        this.scene.add(sphere);
+        return sphere;
+    }
+
+    /**
+     * Create a point light
+     * @returns {THREE.PointLight}
+     * @private
+     */
+    createPointLight() {
+        const light = new THREE.PointLight(0xffffff, 1);
+        light.position.set(0, 2, 0);
+        light.castShadow = true;
+        light.shadow.mapSize.width = 512;
+        light.shadow.mapSize.height = 512;
+        this.scene.add(light);
+        return light;
+    }
+
+    /**
+     * Handle camera view changes
+     * @param {string} view - The view type to change to
+     * @private
+     */
+    handleViewChange(view) {
+        const views = {
+            top: [0, 10, 0],
+            front: [0, 0, 10],
+            side: [10, 0, 0],
+            perspective: [5, 5, 5]
+        };
+
+        if (views[view]) {
+            this.camera.position.fromArray(views[view]);
+            this.camera.lookAt(0, 0, 0);
+            this.orbitControls.update();
+            this.updateStatusBar(`View: ${view.charAt(0).toUpperCase() + view.slice(1)}`);
+        }
+    }
+
+    /**
+     * Handle window resize events
+     * @private
+     */
+    handleResize() {
+        this.camera.aspect = this.calculateAspectRatio();
+        this.camera.updateProjectionMatrix();
+        this.updateRendererSize();
+    }
+
+    /**
+     * Calculate the current aspect ratio
+     * @returns {number}
+     * @private
+     */
+    calculateAspectRatio() {
+        return (window.innerWidth - 250) / window.innerHeight;
+    }
+
+    /**
+     * Update the renderer size
+     * @private
+     */
+    updateRendererSize() {
+        this.renderer.setSize(window.innerWidth - 250, window.innerHeight);
+    }
+
+    /**
+     * Handle keyboard shortcuts
+     * @param {KeyboardEvent} event
+     * @private
+     */
+    handleKeyboardShortcuts(event) {
+        const shortcuts = {
+            'Delete': () => this.deleteSelectedObject(),
+            'Escape': () => this.deselectObject(),
+            'q': () => this.selectTool('translate'),
+            'w': () => this.selectTool('rotate'),
+            'e': () => this.selectTool('scale')
+        };
+
+        if (shortcuts[event.key] && !event.ctrlKey && !event.metaKey) {
+            event.preventDefault();
+            shortcuts[event.key]();
+        }
+    }
+
+    /**
+     * Delete the currently selected object
+     * @private
+     */
+    deleteSelectedObject() {
+        if (this.selectedObject && !this.selectedObject.isGrid) {
+            this.scene.remove(this.selectedObject);
+            this.transformControls.detach();
+            this.selectedObject = null;
+            this.updateStatusBar('Object deleted');
+        }
+    }
+
+    /**
+     * Deselect the current object
+     * @private
+     */
+    deselectObject() {
+        if (this.selectedObject) {
+            this.transformControls.detach();
+            this.selectedObject = null;
+            this.updateStatusBar('No selection');
+        }
+    }
+
+    /**
+     * Select a tool by name
+     * @param {string} toolName
+     * @private
+     */
+    selectTool(toolName) {
+        const button = document.querySelector(`[data-tool="${toolName}"]`);
+        if (button) {
+            button.click();
+        }
+    }
+
+    /**
+     * Update the status bar with a message
+     * @param {string} message
+     * @private
+     */
+    updateStatusBar(message) {
+        document.getElementById('objectInfo').textContent = message;
+    }
+
+    /**
+     * Show an error message to the user
+     * @param {string} message
+     * @private
+     */
+    showErrorMessage(message) {
+        // In a real implementation, this would show a proper error UI
+        console.error(message);
+        this.updateStatusBar(`Error: ${message}`);
+    }
+
+    /**
+     * Start the render loop
+     * @private
+     */
+    startRenderLoop() {
+        const animate = () => {
+            if (this.isPlaying) {
+                requestAnimationFrame(animate);
+                this.update();
+            }
+        };
+        animate();
+    }
+
+    /**
+     * Update the scene and controls
+     * @private
+     */
+    update() {
+        // Update FPS counter
+        const now = performance.now();
+        if (this.lastFrame) {
+            const fps = Math.round(1000 / (now - this.lastFrame));
+            document.getElementById('fps').textContent = `FPS: ${fps}`;
+        }
+        this.lastFrame = now;
+
+        // Update controls
+        this.orbitControls.update();
+        
+        // Render scene
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    /**
+     * Add an object to the hierarchy
+     * @param {string} name - Object name
+     * @param {string} type - Object type
+     * @param {THREE.Object3D} object - Three.js object
+     * @returns {string} Object ID
+     * @private
+     */
+    addToHierarchy(name, type, object) {
+        const id = Math.random().toString(36).substr(2, 9);
+        if (object) {
+            object.name = name;
+            this.objects.set(id, object);
+        }
+
+        const li = document.createElement('li');
+        li.className = 'tree-item';
+        li.dataset.id = id;
+        li.dataset.type = type;
+        li.innerHTML = `
+            <span class="tree-toggle"><i class="fas fa-chevron-right"></i></span>
+            <i class="fas fa-${this.getIconForType(type)}"></i>
+            <span class="item-name">${name}</span>
+        `;
+
+        li.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectObject(id);
+        });
+
+        document.getElementById('sceneHierarchy').appendChild(li);
+        return id;
+    }
+
+    /**
+     * Get the icon for an object type
+     * @param {string} type - Object type
+     * @returns {string} Icon name
+     * @private
+     */
+    getIconForType(type) {
+        const icons = {
+            scene: 'sitemap',
+            cube: 'cube',
+            sphere: 'circle',
+            light: 'lightbulb',
+            grid: 'border-all'
+        };
+        return icons[type] || 'cube';
+    }
+
+    /**
+     * Select an object in the scene
+     * @param {string} id - Object ID
+     * @private
+     */
+    selectObject(id) {
+        try {
+            // Update UI selection
+            document.querySelectorAll('.tree-item').forEach(item => item.classList.remove('selected'));
+            document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
+
+            // Update transform controls
+            const object = this.objects.get(id);
+            if (object && object !== this.selectedObject) {
+                if (this.selectedObject) this.transformControls.detach();
+                this.transformControls.attach(object);
+                this.selectedObject = object;
+                this.updateStatusBar(`Selected: ${object.name || 'Unnamed Object'}`);
+            }
+        } catch (error) {
+            console.error('Failed to select object:', error);
+            this.showErrorMessage('Failed to select object');
+        }
+    }
+}
+
+// Initialize editor when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        window.editor = new GameEditor();
+    } catch (error) {
+        console.error('Failed to initialize editor:', error);
+        document.getElementById('objectInfo').textContent = 'Failed to initialize editor';
+    }
+});
+
+    </script>
+</body>
+</html>

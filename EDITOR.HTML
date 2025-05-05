@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor Pages</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Russo+One&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Russo One', sans-serif;
+      background: radial-gradient(ellipse at center, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 60px 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 4rem;
+      text-align: center;
+      color: #0ff;
+      margin-bottom: 50px;
+      text-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+      letter-spacing: 4px;
+      animation: pulseGlow 2s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from {
+        text-shadow: 0 0 10px #0ff, 0 0 30px #0ff;
+      }
+      to {
+        text-shadow: 0 0 20px #0ff, 0 0 60px #0ff;
+      }
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 40px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .box {
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 50px 30px;
+      text-align: center;
+      position: relative;
+      backdrop-filter: blur(15px);
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
+      transition: transform 0.4s ease, box-shadow 0.4s ease, border 0.4s ease;
+    }
+
+    .box::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(60deg, #0ff, #00f, #f0f, #ff0, #0ff);
+      animation: rotate 6s linear infinite;
+      z-index: 0;
+      opacity: 0.1;
+    }
+
+    .box a {
+      position: relative;
+      color: #fff;
+      font-size: 1.6rem;
+      text-decoration: none;
+      z-index: 1;
+      display: inline-block;
+      padding: 10px 20px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #0ff;
+      border-radius: 12px;
+      transition: all 0.4s ease;
+      text-shadow: 0 0 10px #0ff;
+    }
+
+    .box:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 60px rgba(0, 255, 255, 0.7);
+      border: 2px solid #fff;
+    }
+
+    .box a:hover {
+      background: #0ff;
+      color: #000;
+      text-shadow: none;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+ 
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .box a {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Game Editor Portals</h1>
+  <div class="container">
+    <div class="box"><a href="DESIGN.HTML">Editor Page 1</a></div>
+    <div class="box"><a href="PUZZLE_EDITOR.HTML">Editor Page 2</a></div>
+    <div class="box"><a href="index1.HTML">Editor Page 3</a></div>
+    <div class="box"><a href="Background.Html">Editor Page 4</a></div>
+    <div class="box"><a href="Physics.Html">Editor Page 5</a></div>
+    <div class="box"><a href="PLATFORMER.HTML">Editor Page 6</a></div>
+  </div>
+ 
+</body>
+</html>

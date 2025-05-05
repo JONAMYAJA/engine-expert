@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contra-Style Game Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+ 
+
+        
+        body {
+            background: #0a0a23;
+            color: #ddd;
+            min-height: 100vh;
+            overflow: hidden;
+        } 
+
+        container {
+        display: flex;
+        flex-direction: column; /* Adjust layout for better scrolling */
+        height: auto; /* Allow the container to expand */
+    }
+        
+        .header {
+            background: #1e1e30;
+            padding: 0.8rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff0055;
+        }
+        
+        .header h1 {
+            color: #ff0055;
+            text-shadow: 1px 1px 2px rgba(255, 0, 85, 0.5);
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .toolbar button {
+            background: #ff0055;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .toolbar button:hover {
+            background: #ff4081;
+            transform: translateY(-2px);
+        }
+        
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #1e1e30;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+        
+        .editor-tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #333;
+        }
+        
+        .editor-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #aaa;
+        }
+        
+        .editor-tab.active {
+            color: #ff0055;
+            border-bottom: 2px solid #ff0055;
+        }
+        
+        .tab-content {
+            display: none;
+            height: 100%;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .section h3 {
+            color: #ff0055;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 0.25rem;
+        }
+        
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.4rem;
+            background: #2a2a40;
+            border: 1px solid #3a3a50;
+            color: #ddd;
+            border-radius: 4px;
+        }
+        
+        .asset-list {
+            border: 1px solid #333;
+            border-radius: 4px;
+            height: 150px;
+            overflow-y: auto;
+            background: #2a2a40;
+        }
+        
+        .asset-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+        }
+        
+        .asset-item:hover {
+            background: #3a3a50;
+        }
+        
+        .asset-item.selected {
+            background: #4a4a60;
+            border-left: 3px solid #ff0055;
+        }
+        
+        .asset-thumbnail {
+            width: 32px;
+            height: 32px;
+            background: #333;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #11111d;
+        }
+        
+        .level-display {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==') repeat;
+        }
+        
+        .level-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .properties-panel {
+            background: #1e1e30;
+            padding: 0.75rem;
+            height: 180px;
+            border-top: 1px solid #333;
+            overflow-y: auto;
+        }
+        
+        .properties-panel h3 {
+            color: #ff0055;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .property-item label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .property-item input,
+        .property-item select {
+            width: 100%;
+            padding: 0.3rem;
+            font-size: 0.85rem;
+        }
+        
+        .layer-controls {
+            display: flex;
+            padding: 0.5rem;
+            background: #1e1e30;
+            border-bottom: 1px solid #333;
+        }
+        
+        .layer-controls button {
+            background: #2a2a40;
+            color: #ddd;
+            border: none;
+            padding: 0.3rem 0.5rem;
+            margin-right: 0.25rem;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .layer-controls button:hover {
+            background: #3a3a50;
+        }
+        
+        .layer-controls button.active {
+            background: #ff0055;
+            color: #fff;
+        }
+        
+        .context-menu {
+            position: absolute;
+            background: #2a2a40;
+            border: 1px solid #3a3a50;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .context-menu-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #3a3a50;
+        }
+        
+        .context-menu-item:hover {
+            background: #3a3a50;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: #999;
+            cursor: help;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background: #2a2a40;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .grid-toggle {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+        
+        .grid-toggle label {
+            margin-right: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .status-bar {
+            background: #1e1e30;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-bar .coordinates {
+            color: #aaa;
+        }
+        
+        .weapon-preview {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .weapon-preview-box {
+            width: 32px;
+            height: 32px;
+            background: #333;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            border-radius: 3px;
+        }
+        
+        .weapon-stats {
+            font-size: 0.8rem;
+        }
+        
+        .character-preview, .enemy-preview {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            background: #2a2a40;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .character-preview-box, .enemy-preview-box {
+            width: 64px;
+            height: 64px;
+            background: #333;
+            margin-right: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        
+        .character-preview-box img, .enemy-preview-box img,
+        .asset-thumbnail img {
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+        
+        .character-details, .enemy-details {
+            font-size: 0.85rem;
+        }
+        
+        .asset-thumbnail {
+            width: 32px;
+            height: 32px;
+            background: #333;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #fff;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .asset-item.dragging {
+    opacity: 0.6;
+    border: 2px dashed #ff0055;
+    }
+
+.level-display.drag-over {
+    background-color: rgba(255, 0, 85, 0.1);
+}
+
+/* Make sure draggable elements appear draggable */
+[draggable=true] {
+    cursor: grab;
+}
+
+[draggable=true]:active {
+    cursor: grabbing;
+}
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Contra-Style Game Editor</h1>
+        <div class="toolbar">
+            <button id="loadBtn" onclick="window.location.href='INDEXPREVIEW.HTML'">Load</button>>
+            
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="editor-tabs">
+                <div class="editor-tab active" data-tab="level">Level</div>
+                <div class="editor-tab" data-tab="character">Character</div>
+                <div class="editor-tab" data-tab="weapons">Weapons</div>
+                <div class="editor-tab" data-tab="enemies">Enemies</div>
+            </div>
+            
+            <div class="tab-content active" id="level-tab">
+                <div class="section">
+                    <h3>Level Properties</h3>
+                    <div class="form-group">
+                        <label for="levelName">Level Name</label>
+                        <input type="text" id="levelName" value="Stage 1">
+                    </div>
+                    <div class="form-group">
+                        <label for="levelWidth">Level Width (px)</label>
+                        <input type="number" id="levelWidth" value="5000">
+                    </div>
+                    <div class="form-group">
+                        <label for="levelHeight">Level Height (px)</label>
+                        <input type="number" id="levelHeight" value="480">
+                    </div>
+                    <div class="form-group">
+                        <label for="tileset">Tileset</label>
+                        <select id="tileset">
+                            <option value="jungle">Jungle Tileset</option>
+                            <option value="factory">Factory Tileset</option>
+                            <option value="snow">Snow Base Tileset</option>
+                            <option value="alien">Alien Base Tileset</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Terrain Tiles</h3>
+                    <div class="asset-list" id="terrain-list">
+                        <div class="asset-item selected">
+                            <div class="asset-thumbnail">G</div>
+                            <span>Ground Platform</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">B</div>
+                            <span>Brick Block</span>
+                        </div>
+                        
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">L</div>
+                            <span>Ladder</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">S</div>
+                            <span>Slope</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Objects</h3>
+                    <div class="asset-list" id="object-list">
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">P</div>
+                            <span>Player Start</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">E</div>
+                            <span>Enemy Spawn</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">C</div>
+                            <span>Checkpoint</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">W</div>
+                            <span>Weapon Power-up</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">B</div>
+                            <span>Boss Trigger</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="character-tab">
+                <div class="section">
+                    <h3>Character Properties</h3>
+                    <div class="form-group">
+                        <label for="charName">Character</label>
+                        <select id="charName">
+                            <option value="bill">Bill Rizer</option>
+                            <option value="lance">Lance Bean</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="charSpeed">Movement Speed</label>
+                        <input type="number" id="charSpeed" value="5" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="charJump">Jump Height</label>
+                        <input type="number" id="charJump" value="15" min="5" max="25">
+                    </div>
+                    <div class="form-group">
+                        <label for="charGravity">Gravity</label>
+                        <input type="number" id="charGravity" value="0.8" min="0.1" max="2" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="charLives">Starting Lives</label>
+                        <input type="number" id="charLives" value="3" min="1" max="10">
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Character Appearance</h3>
+                    <div class="character-preview">
+                        <div class="character-preview-box">
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA+klEQVR42mNkGAWjYKgBRiIMYKQ+sNAB2AC4QnYGboYCBh6GoE4BBheGQgZRhDlJDEwMsgwLGBYwxMPt/H8bw1aGDQxbGO7ANWrqgAAGfoYABkm4GRr3QTCDOAMvwjeYfk0MvAz8QFzO0MzAw5DLoM+wmOEIQwxDFEM3wzJ0O5kZpBiyGQQQNnMyMDEkMkgx1DIUQcWfMbxjeMvwiuElVG4DwwKGhWgO8GcQZxBGmMXL8JPhPYbBQgyiDOIMMgz8DEpAKgRIxzGUQANiD1RPL9DwAKA9aUBHFTBoQS2SgcoJQqkfDGdh7mRnYAOGQShQbAXQsuChm+xGwSgYOgAAUyW7qW/fmVUAAAAASUVORK5CYII=" alt="Bill Rizer" id="charPreviewImg">
+                        </div>
+                        <div class="character-details">
+                            <div>Stance: Running</div>
+                            <div>Weapon: Regular Gun</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="charStance">Default Stance</label>
+                        <select id="charStance">
+                            <option value="running">Running</option>
+                            <option value="jumping">Jumping</option>
+                            <option value="prone">Prone</option>
+                            <option value="climbing">Climbing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="charColor">Player Color</label>
+                        <select id="charColor">
+                            <option value="red">Red (P1)</option>
+                            <option value="blue">Blue (P2)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Special Abilities</h3>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ability-8way" checked>
+                            8-Way Shooting
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ability-prone" checked>
+                            Prone Position
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ability-climbing" checked>
+                            Climbing
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ability-watersurvival">
+                            Water Survival
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="weapons-tab">
+                <div class="section">
+                    <h3>Weapon Types</h3>
+                    <div class="asset-list" id="weapon-list">
+                        <div class="asset-item selected">
+                            <div class="asset-thumbnail">R</div>
+                            <span>Regular Gun</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">M</div>
+                            <span>Machine Gun</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">S</div>
+                            <span>Spread Gun</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">L</div>
+                            <span>Laser Gun</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">F</div>
+                            <span>Flame Thrower</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Weapon Preview</h3>
+                    <div class="weapon-preview">
+                        <div class="weapon-preview-box">R</div>
+                        <div class="weapon-stats">
+                            <div>Power: Medium</div>
+                            <div>Fire Rate: Medium</div>
+                            <div>Range: Long</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="weaponDamage">Damage</label>
+                        <input type="range" id="weaponDamage" min="1" max="10" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="weaponFireRate">Fire Rate</label>
+                        <input type="range" id="weaponFireRate" min="1" max="10" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="weaponSpread">Bullet Spread</label>
+                        <input type="range" id="weaponSpread" min="1" max="10" value="1">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="enemies-tab">
+                <div class="section">
+                    <h3>Enemy Types</h3>
+                    <div class="asset-list" id="enemy-list">
+                        <div class="asset-item selected">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAArElEQVR42mNkGAWjYKgBRiIMYMS088GDBzzt7e0cQKoAiEWAWJeRkfErkPMFiM8C8RYg3rF///6vMHNoHQJAB9jOnTvXAciUB2JBqJAIED8H4nlAfICBgeFzaGjo/6ioKJo7AOiAICD1H4j3AbE0EIsAsQxQ7DOQ/xSIDwGxPxA/BzrgP9ABCVCLqe4AoAOcgdQeIBYDYjUglgXiL0D8Aoh3ArEL0AHPB0XSHAWjYMQDAGWDJYGZGrZoAAAAAElFTkSuQmCC" alt="Red Soldier">
+                            </div>
+                            <span>Red Soldier</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAsUlEQVR42mNkGAWjYKgBRiIMYMS088GDBzzt7e0cQKoASBUAqQIg1mVkZPwK5HwB4rNAvAWId+zfv/8rzJzBGgJA8+3mzp3rAOTKA7EgVEgEiJ8D8TwgPsDA8OlzaGjo/6ioKJo7AOiAICD1H4j3AbE0EIsAsQxQ7DOQ/xSIDwGxPxA/BzrgP9ABCVCLqe4AoAOcgdQeIBYDYjUglgXiL0D8Aoh3ArEL0AHPB0XSHAWjYMQDACLgMB4/DhJ+AAAAAElFTkSuQmCC" alt="Blue Soldier">
+                            </div>
+                            <span>Blue Soldier</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAqklEQVR42mNkGAWjYKgBRiIMYMSw88GDBwJA2gFIFQCpAiBVAMSyQPwFiHcCsQsQPwfiLUC8Y//+/V9h5tA6BIDm286dO9cByJQHYkEglgfi10D8FYifA/EhIE5gYPj0OTQ09H9UVBTNHQAMhSAg9R+I9wGxNBALA7EsEH8Gcr4A8SEg9gfi50AH/Ac6IAFqMdUdAHSAM5DaA8RiQKwGxLJA/AWIdwJxCsOnz38jI0P/f/36FesAmD6kHmrgAGYGZiCtCKTlgFgZiFWAWB2INYBYE4i1gFgHiPWA2ACIDYF4NwPD50WhoSH/o6JiaO6AUTAKRjwAAGSqfgFxBNrQAAAAAElFTkSuQmCC" alt="Machine Gunner">
+                            </div>
+                            <span>Machine Gunner</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA8klEQVR42mNkGAWjYKgBRiIMYMSw88GDBwJA2gFIFQCpAiBVAMSyQPwFiHcCsQsQPwfiLUC8Y//+/V9h5tA6BIDm286dO9cByJQHYkEglgfi10D8FYifA/EhIE5gYPj0OTQ09H9UVBTNHQAMhSAg9R+I9wGxNBALA7EsEH8Gcr4A8SEg9gfi50AH/Ac6IAFqMdUdAHSAM5DaA8RiQKwGxLJA/AWIdwJxCsOnz38jI0P/f/36FesAmD6kHmrgAGYGZiCtCKTlgFgZiFWAWB2INYBYE4i1gFgHiPWA2ACIDYF4NwPD50WhoSH/o6JiaO6AUTAKRjwAAGSqfgFxBNrQAAAAAElFTkSuQmCC" alt="Turret">
+                            </div>
+                            <span>Turret</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAwElEQVR42u2XQQ6AIAwER1/g/w/qxSMJCQnSbbFeeJMYSdcdKE1K5eMAnM9UeufU8bkA0PUbACbRvkK3AExdFwAwufZWIw0AS50AQL+dR1oAWM8A4HcnH20BYPsGAMfz2woDtqMh9DrztQFY+LUBHPytAWL81gBWQ9Z67Pq/A9BBn0Oj5wFrMZI8kJ0JxYkoe5nj74AEgGU9HM4DnkLGC5n4g8iSiCqmosolxotpsBrHYh6syLG6D7AawP/VFLLmBa5TvS4ZVrHsAAAAAElFTkSuQmCC" alt="Flying Capsule">
+                            </div>
+                            <span>Flying Capsule</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVR42sWXUQ6DIBCG0QO48QAew43xwTTxAi48jQfw0fSw1riS0AKF3RZkEpJKKfyfsLCImDGtAMPNs/sp9BVz3nsMjXPuBPSFwRF2D3hqrbUIlv4B9EghiLgCzKkQt4HYDcAdUghyWkBr/QbA7+/f0mNSL0AIcSXGXyuiG8B7QvCVGmITgHNOGBnCW4TQEkBiUQqh7/tVnQghFAjJxXWCURBC3IsKIARCk4DQFyIKgCKEnAR4YCE1dOMAuQuIxiZEjI1WKkBsJeRGE7ltmBJAagClhBgGkJzqAeRnwaACuGGQAoRlxhkZuQoqYG0lLDkL1gEog0i+C5YB/GYIsQC/dREKsO2OMIDdl5EA+7+OBPABNr6bAQGKkGQAAAAASUVORK5CYII=" alt="Sniper">
+                            </div>
+                            <span>Sniper</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABGElEQVR42sWXUQ7DIAyEyQbtvgfrD/2YrdI26AbtPtVeFQlkUnOxDW1PQopS4DjMBWLOTQCG7nX1U2gr5jzGGELjnDsBvWFwhL0CHrXWWgRLfwB6pBBEXAHmVIh5ILYAuEMKQT4W0Fq/AfD7+7e0mNQLEEJcifHXimgG8J4QfKWGqAZwzgkjQ3iLEGoCkFiUQuj7flMnQggFQnJxnWAUhBD3IsKIgdA0IPSFiAKgCCE3AR5YSA3dHEDuAqKxCRFjo5UKEFsJuRFE7himBJAaQCkhpgEkp3oA+VkwqABuGKQAYZlxRkauggpYWwlLzoJ1AMogku+CcQC/GUIsQNtdpABvuyMSwLbLMIB9T0YC+ABJeaUZ4VEhsQAAAABJRU5ErkJggg==" alt="Gun Wall">
+                            </div>
+                            <span>Gun Wall</span>
+                        </div>
+                        <div class="asset-item">
+                            <div class="asset-thumbnail">
+                                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABDklEQVR42u2WQQ7DIAwE4QP4/0P7h14qpYrqEJvYJoeOhCqVOM7aBhbR5U2EMEOikDJ2B7kOITDsL6UsgTnnHRgRGfYI94BRa61NDMsLYMRsiJ0BFO4O4asBRLgzhD8C6OCuEP4KoIe7QfgUgAlugmg5Ky8DEARwVWEe3A5QoFrhewGkwrcCKP9A39wIl19C5Lfpvn4Yk+veFUDuVSgqhPw3qgBSSYDZ4XsAKDCF9N6zFWAIBXl0Xq0BU2Z+HJ+FAyTBew6LBejBXwEWBTCB3wYoFsAUfhugSABz+C2ALACzD9EQ/WfmrX8EvQCSf8V2BRDRvDOcpwDG/O+DPHuUFgswbJczJvoH1v4ADZ+8GTDkwdkAAAAASUVORK5CYII=" alt="Boss Alien">
+                            </div>
+                            <span>Boss Alien</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Enemy Properties</h3>
+                    <div class="enemy-preview">
+                        <div class="enemy-preview-box">
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAArElEQVR42mNkGAWjYKgBRiIMYMS088GDBzzt7e0cQKoAiEWAWJeRkfErkPMFiM8C8RYg3rF///6vMHNoHQJAB9jOnTvXAciUB2JBqJAIED8H4nlAfICBgeFzaGjo/6ioKJo7AOiAICD1H4j3AbE0EIsAsQxQ7DOQ/xSIDwGxPxA/BzrgP9ABCVCLqe4AoAOcgdQeIBYDYjUglgXiL0D8Aoh3ArEL0AHPB0XSHAWjYMQDAGWDJYGZGrZoAAAAAElFTkSuQmCC" alt="Red Soldier" id="enemyPreviewImg">
+                        </div>
+                        <div class="enemy-details">
+                            <div>Type: Red Soldier</div>
+                            <div>Behavior: Patrol and Shoot</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="enemyHP">Health Points</label>
+                        <input type="number" id="enemyHP" value="1" min="1" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="enemySpeed">Movement Speed</label>
+                        <input type="number" id="enemySpeed" value="2" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="enemyDamage">Damage</label>
+                        <input type="number" id="enemyDamage" value="1" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="enemyBehavior">Behavior</label>
+                        <select id="enemyBehavior">
+                            <option value="patrol_shoot">Patrol and Shoot</option>
+                            <option value="stationary">Stationary</option>
+                            <option value="jump_shoot">Jump and Shoot</option>
+                            <option value="charge">Charge at Player</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="enemySpawnRate">Spawn Rate</label>
+                        <input type="range" id="enemySpawnRate" min="1" max="10" value="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="enemySpawnLimit">Max Enemies on Screen</label>
+                        <input type="number" id="enemySpawnLimit" value="6" min="1" max="20">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="layer-controls">
+                
+                <div class="grid-toggle">
+                    <label for="grid-checkbox">Grid</label>
+                    <input type="checkbox" id="grid-checkbox" checked>
+                </div>
+            </div>
+            
+            <div class="level-display">
+                <canvas id="level-canvas" class="level-canvas" width="5000" height="480"></canvas>
+            </div>
+            
+            <div class="properties-panel">
+                <h3>Selected Object Properties</h3>
+                <div class="properties-grid">
+                    <div class="property-item">
+                        <label for="prop-x">X Position</label>
+                        <input type="number" id="prop-x" value="0">
+                    </div>
+                    <div class="property-item">
+                        <label for="prop-y">Y Position</label>
+                        <input type="number" id="prop-y" value="0">
+                    </div>
+                    <div class="property-item">
+                        <label for="prop-width">Width</label>
+                        <input type="number" id="prop-width" value="32">
+                    </div>
+                    <div class="property-item">
+                        <label for="prop-height">Height</label>
+                        <input type="number" id="prop-height" value="32">
+                    </div>
+                    <div class="property-item">
+                        <label for="prop-type">Type</label>
+                        <select id="prop-type">
+                            <option value="solid">Solid</option>
+                            <option value="platform">Platform</option>
+                            <option value="hazard">Hazard</option>
+                        </select>
+                    </div>
+                    <div class="property-item">
+                        <label for="prop-behavior">Behavior</label>
+                        <select id="prop-behavior">
+                            <option value="static">Static</option>
+                            <option value="moving">Moving</option>
+                            <option value="falling">Falling</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </div>
+    </div>
+    
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item">Cut</div>
+        <div class="context-menu-item">Copy</div>
+        <div class="context-menu-item">Paste</div>
+        <div class="context-menu-item">Delete</div>
+        <div class="context-menu-item">Properties</div>
+    </div>
+      <script>
+ document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.editor-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            tab.classList.add('active');
+            const tabName = tab.getAttribute('data-tab');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+    });
+
+    // Game State Initialization
+    const gameObjects = [];
+    let selectedAsset = null;
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    const canvas = document.getElementById('level-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Asset paths (for illustration)
+    const assetPaths = {
+        terrain: {
+            'G': "Assets/assets/environment/platforms/grass_platform.png",
+            'B': "Assets/assets/environment/platforms/wood_platform.png",
+            'L': "Assets/assets/environment/platforms/wood_platform.png",
+            'S': "Assets/assets/environment/platforms/grass_platform.png"
+        },
+        object: {
+            'P': "Assets/assets/characters/player/npc.png",
+            'E': "Assets/assets/characters/player/enemy.png",
+            'C': "Assets/assets/environment/platforms/wood_platform.png",
+            'W': "Assets/assets/items/weapons/sword.png",
+            'B': "Assets/assets/characters/player/enemy.png"
+        }
+    };
+
+    // Initialize assets with thumbnails
+    function initializeAssets() {
+        document.querySelectorAll('.asset-item').forEach(item => {
+            const thumbnail = item.querySelector('.asset-thumbnail');
+            if (thumbnail) {
+                const code = thumbnail.textContent.trim();
+                const type = item.closest('.asset-list').id.split('-')[0];
+                if (assetPaths[type] && assetPaths[type][code]) {
+                    const img = document.createElement('img');
+                    img.src = assetPaths[type][code];
+                    img.dataset.assetCode = code;
+                    thumbnail.textContent = '';
+                    thumbnail.appendChild(img);
+                }
+            }
+            item.setAttribute('draggable', 'true');
+        });
+    }
+
+    // Drag-and-drop functionality for placing assets
+    function initDragAndDrop() {
+        const levelDisplay = document.querySelector('.level-display');
+
+        levelDisplay.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            levelDisplay.classList.add('drag-over');
+        });
+
+        levelDisplay.addEventListener('dragleave', function () {
+            levelDisplay.classList.remove('drag-over');
+        });
+
+        levelDisplay.addEventListener('drop', function (e) {
+            e.preventDefault();
+            levelDisplay.classList.remove('drag-over');
+
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Create a new object with default width and height
+            gameObjects.push({
+                type: data.type,
+                id: data.id,
+                x: x,
+                y: y,
+                width: 32,  // Default width
+                height: 32, // Default height
+                imgSrc: data.imgSrc
+            });
+
+            redrawCanvas();
+            selectAssetAt(x, y);  // Automatically select the asset after dropping
+        });
+
+        document.querySelectorAll('.asset-item').forEach(item => {
+            item.addEventListener('dragstart', function (e) {
+                const thumbnail = this.querySelector('.asset-thumbnail img');
+                const data = {
+                    type: this.closest('.asset-list').id.split('-')[0],
+                    id: thumbnail.dataset.assetCode,
+                    imgSrc: thumbnail.src
+                };
+                e.dataTransfer.setData('text/plain', JSON.stringify(data));
+            });
+        });
+    }
+
+    // Redraw the entire canvas
+    function redrawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+        changeBackgroundColorAndAddGrid(); // Redraw background and grid
+        gameObjects.forEach(obj => {
+            const img = new Image();
+            img.src = obj.imgSrc;
+            img.onload = function () {
+                ctx.drawImage(img, obj.x, obj.y, obj.width, obj.height); // Use updated width and height
+            };
+        });
+    }
+
+    // Change background and grid
+    function changeBackgroundColorAndAddGrid() {
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const gridSize = 32;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+    }
+
+    // Select an asset based on mouse click
+    function selectAssetAt(x, y) {
+        selectedAsset = gameObjects.find(obj =>
+            x >= obj.x &&
+            x <= obj.x + obj.width &&
+            y >= obj.y &&
+            y <= obj.y + obj.height
+        );
+        if (selectedAsset) {
+            updatePropertiesPanel(selectedAsset);
+        }
+    }
+
+    // Update properties in the panel
+    function updatePropertiesPanel(asset) {
+        if (asset) {
+            document.getElementById('prop-x').value = asset.x;
+            document.getElementById('prop-y').value = asset.y;
+            document.getElementById('prop-width').value = asset.width;
+            document.getElementById('prop-height').value = asset.height;
+        }
+    }
+
+    // Mouse events for dragging assets
+    canvas.addEventListener('mousedown', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        selectAssetAt(mouseX, mouseY);
+
+        if (selectedAsset) {
+            isDragging = true;
+            offsetX = mouseX - selectedAsset.x;
+            offsetY = mouseY - selectedAsset.y;
+        }
+    });
+
+    canvas.addEventListener('mousemove', function (e) {
+        if (isDragging && selectedAsset) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            selectedAsset.x = mouseX - offsetX;
+            selectedAsset.y = mouseY - offsetY;
+
+            redrawCanvas();
+            updatePropertiesPanel(selectedAsset);
+        }
+    });
+
+    canvas.addEventListener('mouseup', function () {
+        isDragging = false;
+        selectedAsset = null;
+    });
+
+    // Update width and height from input fields
+    document.getElementById('prop-width').addEventListener('input', function (e) {
+        if (selectedAsset) {
+            selectedAsset.width = parseInt(e.target.value, 10) || 32; // Update width
+            redrawCanvas(); // Redraw the canvas to reflect the updated width
+        }
+    });
+
+    document.getElementById('prop-height').addEventListener('input', function (e) {
+        if (selectedAsset) {
+            selectedAsset.height = parseInt(e.target.value, 10) || 32; // Update height
+            redrawCanvas(); // Redraw the canvas to reflect the updated height
+        }
+    });
+
+    // Initialize everything
+    initializeAssets();
+    initDragAndDrop();
+    changeBackgroundColorAndAddGrid();
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.editor-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            tab.classList.add('active');
+            const tabName = tab.getAttribute('data-tab');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+    });
+
+    // Game State Initialization
+    const gameObjects = [];
+    let selectedAsset = null;
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    const canvas = document.getElementById('level-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Asset paths (for illustration)
+    const assetPaths = {
+        terrain: {
+            'G': "Assets/assets/environment/platforms/grass_platform.png",
+            'B': "Assets/assets/environment/platforms/wood_platform.png",
+            'L': "Assets/assets/environment/platforms/wood_platform.png",
+            'S': "Assets/assets/environment/platforms/grass_platform.png"
+        },
+        object: {
+            'P': "Assets/assets/characters/player/npc.png",
+            'E': "Assets/assets/characters/player/enemy.png",
+            'C': "Assets/assets/environment/platforms/wood_platform.png",
+            'W': "Assets/assets/items/weapons/sword.png",
+            'B': "Assets/assets/characters/player/enemy.png"
+        }
+    };
+
+    // Initialize assets with thumbnails
+    function initializeAssets() {
+        document.querySelectorAll('.asset-item').forEach(item => {
+            const thumbnail = item.querySelector('.asset-thumbnail');
+            if (thumbnail) {
+                const code = thumbnail.textContent.trim();
+                const type = item.closest('.asset-list').id.split('-')[0];
+                if (assetPaths[type] && assetPaths[type][code]) {
+                    const img = document.createElement('img');
+                    img.src = assetPaths[type][code];
+                    img.dataset.assetCode = code;
+                    thumbnail.textContent = '';
+                    thumbnail.appendChild(img);
+                }
+            }
+            item.setAttribute('draggable', 'true');
+        });
+    }
+
+    // Drag-and-drop functionality for placing assets
+    function initDragAndDrop() {
+        const levelDisplay = document.querySelector('.level-display');
+
+        levelDisplay.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            levelDisplay.classList.add('drag-over');
+        });
+
+        levelDisplay.addEventListener('dragleave', function () {
+            levelDisplay.classList.remove('drag-over');
+        });
+
+        levelDisplay.addEventListener('drop', function (e) {
+            e.preventDefault();
+            levelDisplay.classList.remove('drag-over');
+
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Create a new object with default width and height
+            gameObjects.push({
+                type: data.type,
+                id: data.id,
+                x: x,
+                y: y,
+                width: 32,  // Default width
+                height: 32, // Default height
+                imgSrc: data.imgSrc
+            });
+
+            redrawCanvas();
+            selectAssetAt(x, y);  // Automatically select the asset after dropping
+        });
+
+        document.querySelectorAll('.asset-item').forEach(item => {
+            item.addEventListener('dragstart', function (e) {
+                const thumbnail = this.querySelector('.asset-thumbnail img');
+                const data = {
+                    type: this.closest('.asset-list').id.split('-')[0],
+                    id: thumbnail.dataset.assetCode,
+                    imgSrc: thumbnail.src
+                };
+                e.dataTransfer.setData('text/plain', JSON.stringify(data));
+            });
+        });
+    }
+
+    // Redraw the entire canvas
+    function redrawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+        changeBackgroundColorAndAddGrid(); // Redraw background and grid
+        gameObjects.forEach(obj => {
+            const img = new Image();
+            img.src = obj.imgSrc;
+            img.onload = function () {
+                ctx.drawImage(img, obj.x, obj.y, obj.width, obj.height); // Use updated width and height
+            };
+        });
+    }
+
+    // Change background and grid
+    function changeBackgroundColorAndAddGrid() {
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const gridSize = 32;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+    }
+
+    // Select an asset based on mouse click
+    function selectAssetAt(x, y) {
+        selectedAsset = gameObjects.find(obj =>
+            x >= obj.x &&
+            x <= obj.x + obj.width &&
+            y >= obj.y &&
+            y <= obj.y + obj.height
+        );
+        if (selectedAsset) {
+            updatePropertiesPanel(selectedAsset);
+        }
+    }
+
+    // Update properties in the panel
+    function updatePropertiesPanel(asset) {
+        if (asset) {
+            document.getElementById('prop-x').value = asset.x;
+            document.getElementById('prop-y').value = asset.y;
+            document.getElementById('prop-width').value = asset.width;
+            document.getElementById('prop-height').value = asset.height;
+        }
+    }
+
+    // Mouse events for dragging assets
+    canvas.addEventListener('mousedown', function (e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        selectAssetAt(mouseX, mouseY);
+
+        if (selectedAsset) {
+            isDragging = true;
+            offsetX = mouseX - selectedAsset.x;
+            offsetY = mouseY - selectedAsset.y;
+        }
+    });
+
+    canvas.addEventListener('mousemove', function (e) {
+        if (isDragging && selectedAsset) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            selectedAsset.x = mouseX - offsetX;
+            selectedAsset.y = mouseY - offsetY;
+
+            redrawCanvas();
+            updatePropertiesPanel(selectedAsset);
+        }
+    });
+
+    canvas.addEventListener('mouseup', function () {
+        isDragging = false;
+        selectedAsset = null;
+    });
+
+    // Update width and height from input fields
+    document.getElementById('prop-width').addEventListener('input', function (e) {
+        if (selectedAsset) {
+            selectedAsset.width = parseInt(e.target.value, 10) || 32; // Update width
+            redrawCanvas(); // Redraw the canvas to reflect the updated width
+        }
+    });
+
+    document.getElementById('prop-height').addEventListener('input', function (e) {
+        if (selectedAsset) {
+            selectedAsset.height = parseInt(e.target.value, 10) || 32; // Update height
+            redrawCanvas(); // Redraw the canvas to reflect the updated height
+        }
+    });
+
+    // Initialize everything
+    initializeAssets();
+    initDragAndDrop();
+    changeBackgroundColorAndAddGrid();
+});
+</script>
+    
+</body>
+</html> 

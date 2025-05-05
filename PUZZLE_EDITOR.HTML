@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Puzzle Game Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #3b82f6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .toolbar {
+            background: var(--surface);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--surface-light);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .toolbar button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .toolbar button i {
+            font-size: 1rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .game-canvas {
+            flex: 1;
+            background: var(--surface);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-panel {
+            width: 350px;
+            background: var(--surface);
+            border-left: 1px solid var(--surface-light);
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .settings-section {
+            background: var(--surface-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-section h3 {
+            color: var(--text);
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .input-group select,
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--surface-light);
+            color: var(--text);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group select:focus,
+        .input-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .game-grid {
+            display: grid;
+            gap: 0.25rem;
+            background: var(--surface-light);
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-cell {
+            width: 80px;
+            height: 80px;
+            background: var(--surface);
+            border: 2px solid var(--surface-light);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--text);
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .grid-cell:hover {
+            background: var(--surface-light);
+            transform: scale(1.02);
+        }
+
+        .grid-cell.x {
+            color: var(--primary);
+        }
+
+        .grid-cell.o {
+            color: var(--secondary);
+        }
+
+        .preview-panel {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .preview-panel div {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .preview-panel span {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .rules-list {
+            list-style: none;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .rules-list li {
+            background: var(--surface);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            border: 1px solid var(--surface-light);
+        }
+
+        .rules-list button {
+            background: var(--danger);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .rules-list button:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        #addRuleBtn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        #addRuleBtn:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast i {
+            font-size: 1.25rem;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .apply-rules-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .apply-rules-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .apply-rules-btn i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="toolbar">
+            <button id="newGameBtn"><i class="fas fa-plus"></i>New Game</button>
+            <button id="previewBtn"><i class="fas fa-play"></i>Preview</button>
+        </div>
+
+        <div class="main-content">
+            <div class="game-canvas">
+                <div class="game-grid" id="gameGrid"></div>
+                <div class="preview-panel">
+                    <div><i class="fas fa-chess-board"></i>Moves: <span id="moveCount">0</span></div>
+                    <div><i class="fas fa-star"></i>Score: <span id="scoreCount">0</span></div>
+                </div>
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-section">
+                    <h3><i class="fas fa-cog"></i>Game Settings</h3>
+                    <div class="input-group">
+                        <label>Game Type</label>
+                        <select id="gameType">
+                            <option value="tictactoe">Tic Tac Toe</option>
+                            <option value="match3">Match 3</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Grid Size</label>
+                        <select id="gridSize">
+                            <option value="3">3x3</option>
+                            <option value="4">4x4</option>
+                            <option value="5">5x5</option>
+                            <option value="6">6x6</option>
+                            <option value="8">8x8</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-scroll"></i>Game Rules</h3>
+                    <div class="input-group">
+                        <label>Win Condition</label>
+                        <select id="winCondition">
+                            <option value="row">Complete Row</option>
+                            <option value="pattern">Match Pattern</option>
+                            <option value="score">Score Target</option>
+                            <option value="time">Time Challenge</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Move Rules</label>
+                        <select id="moveRules">
+                            <option value="adjacent">Adjacent Only</option>
+                            <option value="any">Any Cell</option>
+                            <option value="diagonal">Include Diagonal</option>
+                            <option value="jump">Jump Move</option>
+                        </select>
+                    </div>
+                    <button id="addRuleBtn"><i class="fas fa-plus"></i> Add Rule</button>
+                    <ul class="rules-list" id="rulesList"></ul>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-chess-pawn"></i>Piece Settings</h3>
+                    <div class="input-group">
+                        <label>Player Pieces</label>
+                        <select id="piecesType">
+                            <option value="xo">X and O</option>
+                            <option value="colors">Colors</option>
+                            <option value="numbers">Numbers</option>
+                            <option value="icons">Icons</option>
+                           
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-check-circle"></i>Finalize Game</h3>
+                    <button id="applyRulesBtn" class="apply-rules-btn">
+                        <i class="fas fa-magic"></i>
+                        Apply Rules & Preview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        class PuzzleGameEditor {
+            constructor() {
+                this.gameType = 'tictactoe';
+                this.gridSize = 3;
+                this.currentPlayer = 'X';
+                this.moveCount = 0;
+                this.score = 0;
+                this.rules = [];
+                this.gameBoard = [];
+                this.isTestMode = false;
+                
+                this.initializeUI();
+                this.setupEventListeners();
+                this.createGrid();
+            }
+
+            initializeUI() {
+                this.gameGrid = document.getElementById('gameGrid');
+                this.moveCounter = document.getElementById('moveCount');
+                this.scoreCounter = document.getElementById('scoreCount');
+                this.toast = document.getElementById('toast');
+                
+                this.gameTypeSelect = document.getElementById('gameType');
+                this.gridSizeSelect = document.getElementById('gridSize');
+                this.winConditionSelect = document.getElementById('winCondition');
+                this.moveRulesSelect = document.getElementById('moveRules');
+                this.piecesTypeSelect = document.getElementById('piecesType');
+                this.rulesList = document.getElementById('rulesList');
+            }
+
+            showToast(message, type = 'success') {
+                this.toast.className = `toast ${type}`;
+                this.toast.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${message}
+                `;
+                this.toast.classList.add('show');
+                setTimeout(() => this.toast.classList.remove('show'), 3000);
+            }
+
+            setupEventListeners() {
+                this.gameTypeSelect.addEventListener('change', () => {
+                    this.gameType = this.gameTypeSelect.value;
+                    this.resetGame();
+                    this.showToast('Game type updated');
+                });
+
+                this.gridSizeSelect.addEventListener('change', () => {
+                    this.gridSize = parseInt(this.gridSizeSelect.value);
+                    this.createGrid();
+                    this.showToast('Grid size updated');
+                });
+
+                document.getElementById('addRuleBtn').addEventListener('click', () => {
+                    this.addRule();
+                    this.showToast('Rule added successfully');
+                });
+
+                document.getElementById('newGameBtn').addEventListener('click', () => {
+                    this.resetGame();
+                    this.showToast('New game started');
+                });
+
+                document.getElementById('previewBtn').addEventListener('click', () => {
+                    this.saveGame();
+                    window.location.href = 'PUZZLE_PREVIEW.HTML';
+                });
+
+                this.piecesTypeSelect.addEventListener('change', () => {
+                    this.updatePieceStyle();
+                    this.showToast('Piece style updated');
+                });
+
+                document.getElementById('applyRulesBtn').addEventListener('click', () => {
+                    const gameConfig = {
+                        type: this.gameTypeSelect.value,
+                        size: parseInt(this.gridSizeSelect.value),
+                        winCondition: this.winConditionSelect.value,
+                        moveRules: this.moveRulesSelect.value,
+                        pieceStyle: this.piecesTypeSelect.value,
+                        rules: this.rules,
+                        customRules: {
+                            winCondition: {
+                                type: this.winConditionSelect.value,
+                                requirement: this.winConditionSelect.value === 'score' ? 100 : 3
+                            },
+                            moveRules: {
+                                type: this.moveRulesSelect.value,
+                                allowDiagonal: this.moveRulesSelect.value === 'diagonal',
+                                requireAdjacent: this.moveRulesSelect.value === 'adjacent'
+                            }
+                        },
+                        gameState: {
+                            currentPlayer: 'X',
+                            moveCount: 0,
+                            score: 0,
+                            board: Array(parseInt(this.gridSizeSelect.value))
+                                .fill(null)
+                                .map(() => Array(parseInt(this.gridSizeSelect.value)).fill(''))
+                        }
+                    };
+
+                    localStorage.setItem('puzzleGameState', JSON.stringify(gameConfig));
+                    this.showToast('Rules applied successfully! Opening preview...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'PUZZLE_PREVIEW.HTML';
+                    }, 1000);
+                });
+            }
+
+            createGrid() {
+                this.gameGrid.innerHTML = '';
+                this.gameGrid.style.gridTemplateColumns = `repeat(${this.gridSize}, 80px)`;
+                this.gameBoard = Array(this.gridSize).fill(null)
+                    .map(() => Array(this.gridSize).fill(''));
+
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        cell.addEventListener('click', (e) => this.handleCellClick(e));
+                        this.gameGrid.appendChild(cell);
+                    }
+                }
+            }
+
+            handleCellClick(e) {
+                if (this.isTestMode) {
+                    const cell = e.target;
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+
+                    if (this.gameBoard[row][col] === '') {
+                        this.gameBoard[row][col] = this.currentPlayer;
+                        cell.textContent = this.currentPlayer;
+                        cell.className = `grid-cell ${this.currentPlayer.toLowerCase()}`;
+                        
+                        this.moveCount++;
+                        this.moveCounter.textContent = this.moveCount;
+                        
+                        if (this.checkWinCondition(row, col)) {
+                            this.showToast(`Player ${this.currentPlayer} wins!`, 'success');
+                            setTimeout(() => this.resetGame(), 1500);
+                            return;
+                        }
+
+                        this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+                    }
+                }
+            }
+
+            toggleTestMode() {
+                this.isTestMode = !this.isTestMode;
+                this.gameGrid.style.opacity = this.isTestMode ? '1' : '0.7';
+                this.showToast(this.isTestMode ? 'Test mode activated' : 'Test mode deactivated', 
+                             this.isTestMode ? 'success' : 'error');
+            }
+
+            updatePieceStyle() {
+                const style = this.piecesTypeSelect.value;
+                const cells = document.querySelectorAll('.grid-cell');
+                cells.forEach(cell => {
+                    if (cell.textContent) {
+                        switch (style) {
+                            case 'colors':
+                                cell.style.backgroundColor = cell.textContent === 'X' ? '#4f46e5' : '#3b82f6';
+                                cell.textContent = '';
+                                break;
+                            case 'numbers':
+                                cell.style.backgroundColor = '';
+                                cell.textContent = cell.textContent === 'X' ? '1' : '2';
+                                break;
+                            case 'icons':
+                                cell.style.backgroundColor = '';
+                                cell.innerHTML = cell.textContent === 'X' ? 
+                                    '<i class="fas fa-times"></i>' : 
+                                    '<i class="far fa-circle"></i>';
+                                break;
+                            default:
+                                cell.style.backgroundColor = '';
+                                cell.textContent = cell.textContent;
+                        }
+                    }
+                });
+            }
+
+            checkWinCondition(row, col) {
+                const winCondition = this.winConditionSelect.value;
+                
+                switch (winCondition) {
+                    case 'row':
+                        return this.checkRow(row);
+                    case 'pattern':
+                        return this.checkPattern(row, col);
+                    case 'score':
+                        return this.checkScore();
+                    case 'time':
+                        return this.checkTime();
+                    default:
+                        return false;
+                }
+            }
+
+            checkRow(row) {
+                return this.gameBoard[row].every(cell => cell === this.currentPlayer);
+            }
+
+            checkPattern(row, col) {
+                // Check horizontal, vertical, and diagonal
+                return this.checkRow(row) || 
+                       this.checkColumn(col) || 
+                       this.checkDiagonals();
+            }
+
+            checkColumn(col) {
+                return this.gameBoard.every(row => row[col] === this.currentPlayer);
+            }
+
+            checkDiagonals() {
+                const mainDiagonal = Array(this.gridSize).fill(0)
+                    .every((_, i) => this.gameBoard[i][i] === this.currentPlayer);
+                
+                const antiDiagonal = Array(this.gridSize).fill(0)
+                    .every((_, i) => this.gameBoard[i][this.gridSize - 1 - i] === this.currentPlayer);
+
+                return mainDiagonal || antiDiagonal;
+            }
+
+            checkScore() {
+                return this.score >= 100; // Example score threshold
+            }
+
+            checkTime() {
+                // Implementation of time check
+                return false; // Placeholder return, actual implementation needed
+            }
+
+            addRule() {
+                const rule = {
+                    condition: this.winConditionSelect.value,
+                    moveType: this.moveRulesSelect.value
+                };
+
+                this.rules.push(rule);
+                this.updateRulesList();
+            }
+
+            updateRulesList() {
+                this.rulesList.innerHTML = '';
+                this.rules.forEach((rule, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${rule.condition} - ${rule.moveType}`;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'X';
+                    deleteBtn.onclick = () => this.deleteRule(index);
+                    
+                    li.appendChild(deleteBtn);
+                    this.rulesList.appendChild(li);
+                });
+            }
+
+            deleteRule(index) {
+                this.rules.splice(index, 1);
+                this.updateRulesList();
+            }
+
+            resetGame() {
+                this.moveCount = 0;
+                this.score = 0;
+                this.currentPlayer = 'X';
+                this.moveCounter.textContent = '0';
+                this.scoreCounter.textContent = '0';
+                this.createGrid();
+            }
+
+            saveGame() {
+                const gameState = {
+                    type: this.gameType,
+                    size: this.gridSize,
+                    board: this.gameBoard,
+                    rules: this.rules,
+                    moveCount: this.moveCount,
+                    score: this.score,
+                    pieceStyle: this.piecesTypeSelect.value,
+                    winCondition: this.winConditionSelect.value,
+                    moveRules: this.moveRulesSelect.value
+                };
+
+                localStorage.setItem('puzzleGameState', JSON.stringify(gameState));
+                this.showToast('Game saved successfully');
+            }
+
+            loadGame() {
+                const savedState = localStorage.getItem('puzzleGameState');
+                if (savedState) {
+                    const gameState = JSON.parse(savedState);
+                    this.gameType = gameState.type;
+                    this.gridSize = gameState.size;
+                    this.gameBoard = gameState.board;
+                    this.rules = gameState.rules;
+                    this.moveCount = gameState.moveCount;
+                    this.score = gameState.score;
+
+                    this.gameTypeSelect.value = this.gameType;
+                    this.gridSizeSelect.value = this.gridSize;
+                    this.piecesTypeSelect.value = gameState.pieceStyle || 'xo';
+                    
+                    this.createGrid();
+                    this.updateRulesList();
+                    this.moveCounter.textContent = this.moveCount;
+                    this.scoreCounter.textContent = this.score;
+
+                    const cells = this.gameGrid.children;
+                    for (let i = 0; i < this.gridSize; i++) {
+                        for (let j = 0; j < this.gridSize; j++) {
+                            const cell = cells[i * this.gridSize + j];
+                            const value = this.gameBoard[i][j];
+                            if (value) {
+                                cell.textContent = value;
+                                cell.className = `grid-cell ${value.toLowerCase()}`;
+                            }
+                        }
+                    }
+                    this.updatePieceStyle();
+                    this.showToast('Game loaded successfully');
+                } else {
+                    this.showToast('No saved game found', 'error');
+                }
+            }
+
+            exportGame() {
+                const gameConfig = {
+                    type: this.gameType,
+                    size: this.gridSize,
+                    rules: this.rules,
+                    winCondition: this.winConditionSelect.value,
+                    moveRules: this.moveRulesSelect.value,
+                    pieces: this.piecesTypeSelect.value,
+                    board: this.gameBoard
+                };
+
+                const blob = new Blob([JSON.stringify(gameConfig, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `puzzle_game_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showToast('Game exported successfully');
+            }
+        }
+
+        // Initialize the editor when the page loads
+        window.addEventListener('load', () => {
+            const editor = new PuzzleGameEditor();
+        });
+    </script>
+</body>
+</html> 

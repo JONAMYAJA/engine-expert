@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #3b82f6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success: #22c55e;
+            --warning: #eab308;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: var(--surface);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-info {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .info-item span {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .game-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+        }
+
+        .primary-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .warning-btn {
+            background: var(--warning);
+        }
+
+        .warning-btn:hover {
+            background: #ca8a04;
+            transform: translateY(-1px);
+        }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .game-board {
+            display: grid;
+            gap: 0.25rem;
+            background: var(--surface-light);
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            background: var(--surface);
+            border: 2px solid var(--surface-light);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover {
+            background: var(--surface-light);
+            transform: scale(1.02);
+        }
+
+        .cell.x {
+            color: var(--primary);
+        }
+
+        .cell.o {
+            color: var(--secondary);
+        }
+
+        .cell.highlight {
+            border-color: var(--success);
+            animation: pulse 1s infinite;
+        }
+
+        .cell.colors-x {
+            background: var(--primary);
+        }
+
+        .cell.colors-o {
+            background: var(--secondary);
+        }
+
+        .cell.numbers-x {
+            color: var(--primary);
+        }
+
+        .cell.numbers-o {
+            color: var(--secondary);
+        }
+
+        .timer {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+            color: var(--warning);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .modal p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateY(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px var(--primary); }
+            50% { box-shadow: 0 0 20px var(--primary), 0 0 30px var(--secondary); }
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotateZ(0); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0; }
+        }
+
+        .cell.winner {
+            animation: celebrate 0.5s ease infinite, glow 1s ease infinite;
+            z-index: 1;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%);
+            animation: confetti 2s ease-out forwards;
+            z-index: 1000;
+        }
+
+        .confetti.c1 { background-color: var(--primary); }
+        .confetti.c2 { background-color: var(--secondary); }
+        .confetti.c3 { background-color: #22c55e; }
+        .confetti.c4 { background-color: #eab308; }
+        .confetti.c5 { background-color: #ec4899; }
+
+        .win-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--text);
+            text-shadow: 0 0 10px var(--primary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .win-text.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <div class="game-info">
+            <div class="info-item">
+                <i class="fas fa-gamepad"></i>
+                <span id="gameType">Tic Tac Toe</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-chess-board"></i>
+                Moves: <span id="moveCount">0</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-star"></i>
+                Score: <span id="scoreCount">0</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                Turn: <span id="currentPlayer">Player X</span>
+            </div>
+        </div>
+        <div class="game-actions">
+            <button class="action-btn warning-btn" id="restartBtn">
+                <i class="fas fa-redo"></i>
+                Restart
+            </button>
+            <button class="action-btn primary-btn" id="backBtn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Editor
+            </button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="game-board" id="gameBoard"></div>
+    </div>
+
+    <div id="timer" class="timer" style="display: none;">
+        <i class="fas fa-clock"></i>
+        <span id="timeLeft">00:00</span>
+    </div>
+
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <h2>Congratulations!</h2>
+            <p id="winMessage">You've won the game!</p>
+            <button class="action-btn primary-btn" id="newGameBtn">
+                <i class="fas fa-play"></i>
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="win-text" id="winText"></div>
+
+    <script>
+        class PuzzleGamePreview {
+            constructor() {
+                this.loadGameConfig();
+                this.initializeUI();
+                this.setupEventListeners();
+            }
+
+            loadGameConfig() {
+                const savedState = localStorage.getItem('puzzleGameState');
+                if (savedState) {
+                    try {
+                        const gameConfig = JSON.parse(savedState);
+                        
+                        // Load game configuration
+                        this.gameType = gameConfig.type;
+                        this.gridSize = gameConfig.size;
+                        this.winCondition = gameConfig.customRules.winCondition;
+                        this.moveRules = gameConfig.customRules.moveRules;
+                        this.pieceStyle = gameConfig.pieceStyle;
+                        this.rules = gameConfig.rules;
+
+                        // Initialize game state
+                        this.currentPlayer = gameConfig.gameState.currentPlayer;
+                        this.moveCount = gameConfig.gameState.moveCount;
+                        this.score = gameConfig.gameState.score;
+                        this.board = gameConfig.gameState.board;
+                        this.gameActive = true;
+
+                        // Set win requirements
+                        this.winRequirement = this.winCondition.requirement;
+                        
+                    } catch (error) {
+                        console.error('Error loading game state:', error);
+                        this.showToast('Error loading game configuration', 'warning');
+                        setTimeout(() => window.location.href = 'PUZZLE_EDITOR.HTML', 2000);
+                    }
+                } else {
+                    this.showToast('No game configuration found!', 'warning');
+                    setTimeout(() => window.location.href = 'PUZZLE_EDITOR.HTML', 2000);
+                }
+            }
+
+            initializeUI() {
+                this.gameBoard = document.getElementById('gameBoard');
+                this.moveCounter = document.getElementById('moveCount');
+                this.scoreCounter = document.getElementById('scoreCount');
+                this.playerIndicator = document.getElementById('currentPlayer');
+                this.gameTypeDisplay = document.getElementById('gameType');
+                this.timer = document.getElementById('timer');
+                this.timeLeft = document.getElementById('timeLeft');
+                this.winModal = document.getElementById('winModal');
+                this.toast = document.getElementById('toast');
+
+                this.gameTypeDisplay.textContent = this.formatGameType(this.gameType);
+                this.createBoard();
+
+                if (this.winCondition.type === 'time') {
+                    this.timer.style.display = 'flex';
+                    this.startTimer(180); // 3 minutes
+                }
+            }
+
+            formatGameType(type) {
+                return type.split(/(?=[A-Z])/).join(' ').replace(/^\w/, c => c.toUpperCase());
+            }
+
+            setupEventListeners() {
+                document.getElementById('restartBtn').addEventListener('click', () => this.resetGame());
+                document.getElementById('backBtn').addEventListener('click', () => window.location.href = 'PUZZLE_EDITOR.HTML');
+                document.getElementById('newGameBtn').addEventListener('click', () => {
+                    this.winModal.classList.remove('show');
+                    this.resetGame();
+                });
+            }
+
+            createBoard() {
+                this.gameBoard.innerHTML = '';
+                this.gameBoard.style.gridTemplateColumns = `repeat(${this.gridSize}, 80px)`;
+
+                // Create the cells
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        
+                        // Add hover effect class
+                        cell.addEventListener('mouseenter', () => {
+                            if (this.gameActive && this.board[i][j] === '') {
+                                cell.classList.add('hover');
+                            }
+                        });
+                        
+                        cell.addEventListener('mouseleave', () => {
+                            cell.classList.remove('hover');
+                        });
+                        
+                        cell.addEventListener('click', (e) => this.handleCellClick(e));
+                        this.gameBoard.appendChild(cell);
+
+                        // If there's an existing piece, show it
+                        if (this.board[i][j] !== '') {
+                            this.updateCellAppearance(cell, this.board[i][j]);
+                        }
+                    }
+                }
+            }
+
+            handleCellClick(e) {
+                if (!this.gameActive) return;
+
+                const cell = e.target;
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+
+                // Check if the cell is empty and the move is valid
+                if (this.board[row][col] === '') {
+                    if (this.isValidMove(row, col)) {
+                        // Place the piece
+                        this.board[row][col] = this.currentPlayer;
+                        this.updateCellAppearance(cell);
+                        this.moveCount++;
+                        this.score += 10;
+
+                        // Check for win or draw
+                        if (this.checkWinCondition(row, col)) {
+                            this.handleWin();
+                        } else if (this.isBoardFull()) {
+                            this.handleDraw();
+                        } else {
+                            this.switchPlayer();
+                        }
+
+                        this.updateUI();
+                    } else {
+                        this.showToast('Invalid move! Check the rules.', 'warning');
+                    }
+                }
+            }
+
+            isValidMove(row, col) {
+                // First check if the cell is empty
+                if (this.board[row][col] !== '') return false;
+
+                // Then apply the move rules
+                switch (this.moveRules.type) {
+                    case 'adjacent':
+                        const directions = [[-1,0], [1,0], [0,-1], [0,1]];
+                        // For the first move, allow anywhere
+                        if (this.moveCount === 0) return true;
+                        return directions.some(([dr, dc]) => {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            return this.isInBounds(newRow, newCol) && this.board[newRow][newCol] !== '';
+                        });
+                    case 'diagonal':
+                        const allDirections = [[-1,-1], [-1,0], [-1,1], [0,-1], [0,1], [1,-1], [1,0], [1,1]];
+                        // For the first move, allow anywhere
+                        if (this.moveCount === 0) return true;
+                        return allDirections.some(([dr, dc]) => {
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            return this.isInBounds(newRow, newCol) && this.board[newRow][newCol] !== '';
+                        });
+                    case 'any':
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+
+            updateCellAppearance(cell) {
+                switch (this.pieceStyle) {
+                    case 'colors':
+                        cell.className = `cell colors-${this.currentPlayer.toLowerCase()}`;
+                        cell.textContent = '';
+                        break;
+                    case 'numbers':
+                        cell.className = `cell numbers-${this.currentPlayer.toLowerCase()}`;
+                        cell.textContent = this.currentPlayer === 'X' ? '1' : '2';
+                        break;
+                    case 'icons':
+                        cell.className = `cell ${this.currentPlayer.toLowerCase()}`;
+                        cell.innerHTML = this.currentPlayer === 'X' ? 
+                            '<i class="fas fa-times"></i>' : 
+                            '<i class="far fa-circle"></i>';
+                        break;
+                    default:
+                        cell.className = `cell ${this.currentPlayer.toLowerCase()}`;
+                        cell.textContent = this.currentPlayer;
+                }
+            }
+
+            checkWinCondition(row, col) {
+                // Check for pattern matches first
+                const hasPattern = this.checkRow(row) || 
+                                  this.checkColumn(col) || 
+                                  this.checkDiagonals();
+
+                // If there's a pattern match, win immediately regardless of game type
+                if (hasPattern) {
+                    return true;
+                }
+
+                // Then check specific win conditions
+                switch (this.winCondition.type) {
+                    case 'row':
+                        return this.checkRow(row);
+                    case 'pattern':
+                        return false; // Already checked above
+                    case 'score':
+                        return this.score >= this.winRequirement;
+                    case 'time':
+                        return false; // Time will be handled by timer
+                    default:
+                        return false;
+                }
+            }
+
+            checkRow(row) {
+                return this.board[row].every(cell => cell === this.currentPlayer);
+            }
+
+            checkColumn(col) {
+                return this.board.every(row => row[col] === this.currentPlayer);
+            }
+
+            checkDiagonals() {
+                const mainDiagonal = Array(this.gridSize).fill(0)
+                    .every((_, i) => this.board[i][i] === this.currentPlayer);
+                
+                const antiDiagonal = Array(this.gridSize).fill(0)
+                    .every((_, i) => this.board[i][this.gridSize - 1 - i] === this.currentPlayer);
+
+                return mainDiagonal || antiDiagonal;
+            }
+
+            isBoardFull() {
+                return this.board.every(row => row.every(cell => cell !== ''));
+            }
+
+            handleWin() {
+                this.gameActive = false;
+                const message = this.winCondition.type === 'score' ? 
+                    `Player ${this.currentPlayer} wins with score ${this.score}!` :
+                    `Player ${this.currentPlayer} wins!`;
+                
+                // First highlight the winning cells and show animation
+                this.highlightWinningCells();
+                
+                // Then show the win modal after a delay
+                setTimeout(() => {
+                    this.showWinModal(message);
+                }, 1500);
+            }
+
+            handleDraw() {
+                this.gameActive = false;
+                this.showWinModal("It's a draw!");
+            }
+
+            showWinModal(message) {
+                document.getElementById('winMessage').textContent = message;
+                this.winModal.classList.add('show');
+            }
+
+            highlightWinningCells() {
+                // Find winning cells
+                const winningCells = this.findWinningCells();
+                
+                // Highlight winning cells
+                winningCells.forEach(([row, col]) => {
+                    const index = row * this.gridSize + col;
+                    const cell = this.gameBoard.children[index];
+                    cell.classList.add('winner');
+                });
+
+                // Create confetti
+                this.createConfetti();
+
+                // Show win text
+                const winText = document.getElementById('winText');
+                winText.textContent = `Player ${this.currentPlayer} Wins!`;
+                winText.classList.add('show');
+                setTimeout(() => winText.classList.remove('show'), 3000);
+            }
+
+            findWinningCells() {
+                const winningCells = [];
+                
+                // Check rows
+                for (let i = 0; i < this.gridSize; i++) {
+                    if (this.board[i].every(cell => cell === this.currentPlayer)) {
+                        for (let j = 0; j < this.gridSize; j++) {
+                            winningCells.push([i, j]);
+                        }
+                        return winningCells;
+                    }
+                }
+
+                // Check columns
+                for (let j = 0; j < this.gridSize; j++) {
+                    if (this.board.every(row => row[j] === this.currentPlayer)) {
+                        for (let i = 0; i < this.gridSize; i++) {
+                            winningCells.push([i, j]);
+                        }
+                        return winningCells;
+                    }
+                }
+
+                // Check main diagonal
+                if (Array(this.gridSize).fill(0).every((_, i) => this.board[i][i] === this.currentPlayer)) {
+                    for (let i = 0; i < this.gridSize; i++) {
+                        winningCells.push([i, i]);
+                    }
+                    return winningCells;
+                }
+
+                // Check anti-diagonal
+                if (Array(this.gridSize).fill(0).every((_, i) => this.board[i][this.gridSize - 1 - i] === this.currentPlayer)) {
+                    for (let i = 0; i < this.gridSize; i++) {
+                        winningCells.push([i, this.gridSize - 1 - i]);
+                    }
+                    return winningCells;
+                }
+
+                return winningCells;
+            }
+
+            createConfetti() {
+                const colors = ['c1', 'c2', 'c3', 'c4', 'c5'];
+                const confettiCount = 50;
+
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = `confetti ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    
+                    // Random position and delay
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation
+                    setTimeout(() => confetti.remove(), 3000);
+                }
+            }
+
+            switchPlayer() {
+                this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+            }
+
+            updateUI() {
+                this.moveCounter.textContent = this.moveCount;
+                this.scoreCounter.textContent = this.score;
+                this.playerIndicator.textContent = `Player ${this.currentPlayer}`;
+            }
+
+            startTimer(seconds) {
+                let timeLeft = seconds;
+                this.timeLeft.textContent = this.formatTime(timeLeft);
+
+                this.timer = setInterval(() => {
+                    timeLeft--;
+                    this.timeLeft.textContent = this.formatTime(timeLeft);
+
+                    if (timeLeft <= 0) {
+                        clearInterval(this.timer);
+                        this.handleTimeUp();
+                    }
+                }, 1000);
+            }
+
+            formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            handleTimeUp() {
+                this.gameActive = false;
+                // Check if anyone has won by completing a pattern
+                let winner = null;
+                for (let i = 0; i < this.gridSize; i++) {
+                    for (let j = 0; j < this.gridSize; j++) {
+                        if (this.board[i][j] !== '') {
+                            const currentPlayer = this.board[i][j];
+                            // Check row
+                            if (this.board[i].every(cell => cell === currentPlayer)) {
+                                winner = currentPlayer;
+                                break;
+                            }
+                            // Check column
+                            if (this.board.every(row => row[j] === currentPlayer)) {
+                                winner = currentPlayer;
+                                break;
+                            }
+                        }
+                    }
+                    // Check diagonals
+                    if (Array(this.gridSize).fill(0).every((_, idx) => this.board[idx][idx] === this.board[0][0] && this.board[0][0] !== '')) {
+                        winner = this.board[0][0];
+                    }
+                    if (Array(this.gridSize).fill(0).every((_, idx) => this.board[idx][this.gridSize - 1 - idx] === this.board[0][this.gridSize - 1] && this.board[0][this.gridSize - 1] !== '')) {
+                        winner = this.board[0][this.gridSize - 1];
+                    }
+                }
+
+                if (winner) {
+                    this.showWinModal(`Player ${winner} wins by completing a pattern!`);
+                } else {
+                    this.showWinModal(`Time's up! Game Over - It's a draw!`);
+                }
+            }
+
+            resetGame() {
+                // Remove winner classes from all cells
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach(cell => cell.classList.remove('winner'));
+                
+                // Remove win text
+                const winText = document.getElementById('winText');
+                winText.classList.remove('show');
+                
+                // Remove any remaining confetti
+                const confetti = document.querySelectorAll('.confetti');
+                confetti.forEach(c => c.remove());
+                
+                // Reset game state
+                this.board = Array(this.gridSize).fill(null)
+                    .map(() => Array(this.gridSize).fill(''));
+                this.currentPlayer = 'X';
+                this.moveCount = 0;
+                this.score = 0;
+                this.gameActive = true;
+                this.createBoard();
+                this.updateUI();
+
+                if (this.winCondition.type === 'time') {
+                    clearInterval(this.timer);
+                    this.startTimer(180);
+                }
+
+                this.showToast('Game reset!', 'success');
+            }
+
+            showToast(message, type = 'success') {
+                this.toast.className = `toast ${type}`;
+                this.toast.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                `;
+                this.toast.classList.add('show');
+                setTimeout(() => this.toast.classList.remove('show'), 3000);
+            }
+
+            isInBounds(row, col) {
+                return row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize;
+            }
+        }
+
+        // Initialize the preview when the page loads
+        window.addEventListener('load', () => {
+            const preview = new PuzzleGamePreview();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contra-Style Level Preview</title>
+    <style>
+        body {
+            background: #0a0a23;
+            color: #fff;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .preview-header {
+            background: #1e1e30;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #ff0055;
+        }
+        .preview-header h1 {
+            color: #ff0055;
+            margin: 0;
+        }
+        .preview-header button {
+            background: #ff0055;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .preview-header button:hover {
+            background: #ff4081;
+        }
+        .preview-canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #11111d;
+        }
+        #preview-canvas {
+            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==') repeat;
+            border: 2px solid #ff0055;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .preview-status {
+            background: #1e1e30;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-top: 1px solid #333;
+            color: #aaa;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <h1>Level Preview</h1>
+        <button onclick="window.location.href='index.html'">Back to Editor</button>
+    </div>
+    <div class="preview-canvas-container">
+        <canvas id="preview-canvas" width="900" height="480"></canvas>
+    </div>
+    <div class="preview-status" id="preview-status">Use arrow keys to move. Preview only.</div>
+    <script>
+// --- Demo Level Data (replace with actual data loading) ---
+const levelData = {
+    width: 900,
+    height: 480,
+    tiles: [
+        // Simple ground tiles
+        {x:0, y:448, w:900, h:32, color:'#228B22'},
+        // Platform
+        {x:200, y:350, w:120, h:16, color:'#8B4513'},
+        {x:400, y:270, w:120, h:16, color:'#8B4513'}
+    ],
+    objects: [
+        {type:'enemy', x:250, y:416, w:32, h:32, color:'#c00'},
+        {type:'powerup', x:430, y:238, w:24, h:24, color:'#FFD700'}
+    ],
+    player: {x: 60, y: 416, w: 32, h: 32, color:'#00bfff'}
+};
+
+const canvas = document.getElementById('preview-canvas');
+const ctx = canvas.getContext('2d');
+
+// --- Player State ---
+let player = {...levelData.player, vy: 0, onGround: false};
+const gravity = 0.7;
+const moveSpeed = 4;
+const jumpPower = 13;
+let keys = {};
+
+// --- Input ---
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+// --- Collision Helper ---
+function rectsCollide(a, b) {
+    return (
+        a.x < b.x + b.w && a.x + a.w > b.x &&
+        a.y < b.y + b.h && a.y + a.h > b.y
+    );
+}
+
+// --- Game Loop ---
+function update() {
+    // Horizontal movement
+    if (keys['ArrowLeft']) player.x -= moveSpeed;
+    if (keys['ArrowRight']) player.x += moveSpeed;
+
+    // Gravity
+    player.vy += gravity;
+    player.y += player.vy;
+    player.onGround = false;
+
+    // Collisions with tiles
+    for (const tile of levelData.tiles) {
+        if (rectsCollide(player, tile)) {
+            // Simple ground/platform collision
+            if (player.vy > 0 && player.y + player.h - player.vy <= tile.y) {
+                // Landing on top
+                player.y = tile.y - player.h;
+                player.vy = 0;
+                player.onGround = true;
+            } else if (player.vy < 0 && player.y >= tile.y + tile.h) {
+                // Hitting head
+                player.y = tile.y + tile.h;
+                player.vy = 0;
+            } else if (player.x + player.w - moveSpeed <= tile.x) {
+                // Left collision
+                player.x = tile.x - player.w;
+            } else if (player.x >= tile.x + tile.w - moveSpeed) {
+                // Right collision
+                player.x = tile.x + tile.w;
+            }
+        }
+    }
+
+    // Jump
+    if (keys['ArrowUp'] && player.onGround) {
+        player.vy = -jumpPower;
+        player.onGround = false;
+    }
+
+    // Boundaries
+    player.x = Math.max(0, Math.min(levelData.width - player.w, player.x));
+    player.y = Math.min(levelData.height - player.h, player.y);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw tiles
+    for (const tile of levelData.tiles) {
+        ctx.fillStyle = tile.color;
+        ctx.fillRect(tile.x, tile.y, tile.w, tile.h);
+    }
+    // Draw objects
+    for (const obj of levelData.objects) {
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
+        if (obj.type === 'enemy') {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('E', obj.x + 8, obj.y + 22);
+        } else if (obj.type === 'powerup') {
+            ctx.fillStyle = '#111';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('P', obj.x + 6, obj.y + 19);
+        }
+    }
+    // Draw player
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('YOU', player.x + 2, player.y + 22);
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+    </script>
+</body>
+</html>
